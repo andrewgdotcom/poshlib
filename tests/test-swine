@@ -1,5 +1,5 @@
 #!/bin/bash
-. $(dirname $(readlink -f $0))/../swine.sh
+. $(dirname $(readlink -f $0))/../swine.sh || exit 101
 
 # contains
 contains wibble foo bar wibble
