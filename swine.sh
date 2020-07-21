@@ -5,8 +5,6 @@
 #
 # This file has no magic number, and is not executable.
 # THIS IS INTENTIONAL as it should never be executed, only sourced.
-#
-# . ${POSHLIB}/swine.sh || exit 101
 ################################################################################
 
 set -o errexit
