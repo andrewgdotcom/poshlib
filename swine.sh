@@ -13,7 +13,7 @@ set -o pipefail
 set -o nounset
 err_report() {
     echo "errexit on line $(caller)" >&2
-};
+}
 trap err_report ERR
 
 # die takes two arguments, unlike perl
