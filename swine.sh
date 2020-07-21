@@ -9,7 +9,10 @@
 # . ${POSHLIB}/swine.sh || exit 101
 ################################################################################
 
-set -euo pipefail
+set -o errexit
+set -o pipefail
+#set -o noclobber
+set -o nounset
 err_report() {
     echo "errexit on line $(caller)" >&2
 };

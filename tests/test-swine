@@ -1,0 +1,8 @@
+#!/bin/bash
+. $(dirname $(readlink -f $0))/../swine.sh
+
+# contains
+contains wibble foo bar wibble
+
+# die
+die 0 "All tests passed"
