@@ -33,7 +33,7 @@ say() {
 warn() {
     local text="$1"; shift
     if [ "$*" != "" ]; then
-        die "Too many arguments to warn() at line $(caller)"
+        die 102 "Too many arguments to warn() at line $(caller)"
     fi
     echo -E "$text" >&2
 }
@@ -45,7 +45,7 @@ die() {
     local errcode="$1"; shift
     local text="$1"; shift
     if [ "$*" != "" ]; then
-        die "Too many arguments to die() at line $(caller)"
+        die 102 "Too many arguments to die() at line $(caller)"
     fi
     echo -E "$text" >&2
     exit "$errcode"
