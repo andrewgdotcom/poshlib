@@ -16,12 +16,16 @@ err_report() {
 }
 trap err_report ERR
 
+warn() {
+    echo "$1" >&2
+}
+
 # die takes two arguments, unlike perl
 # do something || die $errnum "$notice"
 
 die() {
-    echo $2 >&2
-    exit $1
+    echo "$2" >&2
+    exit "$1"
 }
 
 # if contains "$element" "${array[@]}"; then ...
