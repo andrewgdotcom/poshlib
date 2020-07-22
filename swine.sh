@@ -9,7 +9,6 @@
 
 set -o errexit
 set -o pipefail
-#set -o noclobber
 set -o nounset
 err_report() {
     echo "errexit on line $(caller)" >&2
