@@ -37,9 +37,10 @@ This module defines no functions, as it can only be invoked once per shell. You 
 
 This module sets some shell option defaults to make it more like perl's `strict`, and defines the functions:
 
+* say
+* warn
 * die
 * contains
-*
 
 ### flatten - convert a poshlib script with `use` dependencies into a flat script
 
