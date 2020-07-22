@@ -15,7 +15,7 @@ use() {
     local dir
     local IFS=:
     for dir in $USEPATH; do
-        if [[ -f "$dir/$1.sh" ]]; then
+        if [ -f "$dir/$1.sh" ]; then
             source "$dir/$1.sh"
             return 0
         fi

@@ -16,15 +16,24 @@ err_report() {
 }
 trap err_report ERR
 
+# The default behaviour of `echo` differs between shells, so we deprecate it.
+# say (from perl6/raku) forces there to be no escape-char handling at runtime.
+# If we want to interpret escape sequences in literals then we should use $''.
+# If we want to interpret them at runtime we should pass through $(echo -e).
+
+say() {
+    echo -E "$1"
+}
+
 warn() {
-    echo "$1" >&2
+    echo -E "$1" >&2
 }
 
 # die takes two arguments, unlike perl
 # do something || die $errnum "$notice"
 
 die() {
-    echo "$2" >&2
+    echo -E "$2" >&2
     exit "$1"
 }
 
@@ -34,7 +43,7 @@ contains() {
     local i element="$1"
     shift
     for i; do
-        if [[ "$i" == "$element" ]]; then
+        if [ "$i" == "$element" ]; then
             return 0
         fi
     done
