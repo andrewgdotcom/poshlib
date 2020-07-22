@@ -1,0 +1,17 @@
+#!/bin/bash
+. $(dirname "${BASH_SOURCE[0]}")/../init
+use swine
+use flatten
+
+file1=$(flatten "${BASH_SOURCE[0]}")
+
+if [ "$*" = "last" ]; then
+    echo "$file1"
+    exit 0
+fi
+
+file2=$(/bin/bash "$file1" last 2>/dev/null)
+
+if ! diff -q "$file1" "$file2" 2>/dev/null; then
+    die 1 "flattening not consistent"
+fi

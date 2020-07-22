@@ -1,8 +1,20 @@
 #!/bin/bash
-. $(dirname $(readlink -f $0))/../swine.sh || exit 101
+. $(dirname "${BASH_SOURCE[0]}")/../init || exit 101
+use swine
 
 # contains
 contains wibble foo bar wibble
 
+# say
+test="Hello \n this should not be line broken"
+if [ "$test" != "$(say "$test")" ]; then
+    die 1 "failure in say"
+fi
+
+# warn
+if [ "$test" != "$(warn "$test" 2>&1)" ]; then
+    die 1 "failure in warn"
+fi
+
 # die
-die 0 "All tests passed"
+die 0 "" 2>/dev/null
