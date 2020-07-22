@@ -7,6 +7,9 @@
 # `source` or `.`, and the `use` command must appear on a line by itself.
 # Flattened dependencies will be recursively processed.
 #
+# BEWARE that flattening will be performed using the running shell's USEPATH,
+# and NOT the USEPATH that may be overridden in the target script's runtime.
+#
 # This tool produces a temporary output file and prints its name on STDOUT.
 # It should be invoked as e.g.:
 #
