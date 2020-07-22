@@ -19,6 +19,11 @@
 flatten() { (
     use swine
 
+    local script="$1"; shift
+    if [ "$*" != "" ]; then
+        die 102 "Too many arguments to flatten() at line $(caller)"
+    fi
+
     recurse() {
         local dir
         local IFS=:
@@ -31,12 +36,15 @@ flatten() { (
         die 101 "Could not find $1.sh in $USEPATH"
     }
 
-    outfile=$(mktemp) || die 1001 "Could not open temporary file"
+    outfile=$(mktemp) || die 103 "Could not open temporary file"
     continuation=
 
-    exec <"$1"
+    exec <"$script"
     while IFS= read -r input; do
-        if module=$(awk '$1=="use" {print $2}' <<<"$input"); [ $module -a ! $continuation ]; then
+        if
+            module=$(awk '$1=="use" {print $2}' <<<"$input")
+            [ $module -a ! $continuation ]
+        then
             say "# BEGIN FLATTEN USE $module" >> $outfile
             cat $(recurse "$module") >> $outfile
             say "# END FLATTEN USE $module" >> $outfile
