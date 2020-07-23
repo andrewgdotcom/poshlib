@@ -42,7 +42,7 @@ flatten() { (
     exec <"$script"
     while IFS= read -r input; do
         if
-            module=$(awk '$1=="use" {print $2}' <<<"$input")
+            module=$(say "$input" | awk '$1=="use" {print $2}')
             [ $module -a ! $continuation ]
         then
             say "# BEGIN FLATTEN USE $module" >> $outfile
