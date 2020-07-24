@@ -3,15 +3,17 @@
 use swine
 use flatten
 
-file1=$(flatten "${BASH_SOURCE[0]}")
-
 if [ "$*" = "last" ]; then
-    echo "$file1"
+    flatten "${BASH_SOURCE[0]}"
     exit 0
 fi
 
-file2=$(/bin/bash "$file1" last 2>/dev/null)
+tmpdir=$(mktemp -d)
 
-if ! diff -q "$file1" "$file2" 2>/dev/null; then
-    die 1 "flattening not consistent"
+flatten "${BASH_SOURCE[0]}" > $tmpdir/file1
+
+/bin/bash "$tmpdir/file1" last 2>/dev/null > $tmpdir/file2
+
+if ! diff -q "$tmpdir/file1" "$tmpdir/file2" 2>/dev/null; then
+    die 1 "flattening not idempotent"
 fi

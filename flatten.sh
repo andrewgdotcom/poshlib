@@ -10,10 +10,7 @@
 # BEWARE that flattening will be performed using the running shell's USEPATH,
 # and NOT the USEPATH that may be overridden in the target script's runtime.
 #
-# This tool produces a temporary output file and prints its name on STDOUT.
-# It should be invoked as e.g.:
-#
-#   ansible -m script -a $(flatten ./do-things.sh)
+# This tool produces the flattened output on STDOUT.
 ################################################################################
 
 flatten() { (
@@ -36,7 +33,6 @@ flatten() { (
         die 101 "Could not find $1.sh in $USEPATH"
     }
 
-    outfile=$(mktemp) || die 103 "Could not open temporary file"
     continuation=
 
     exec <"$script"
@@ -45,11 +41,11 @@ flatten() { (
             module=$(say "$input" | awk '$1=="use" {print $2}')
             [ $module -a ! $continuation ]
         then
-            say "# BEGIN FLATTEN USE $module" >> $outfile
-            cat $(recurse "$module") >> $outfile
-            say "# END FLATTEN USE $module" >> $outfile
+            say "# BEGIN FLATTEN USE $module"
+            recurse "$module"
+            say "# END FLATTEN USE $module"
         else
-            say "$input" >> $outfile
+            say "$input"
         fi
         if [ "${input%\\}" != "${input}" ]; then
             continuation=1
@@ -57,6 +53,4 @@ flatten() { (
             continuation=
         fi
     done
-
-    say "$outfile"
 ) }
