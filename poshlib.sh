@@ -12,11 +12,12 @@
 USEPATH=$(dirname $(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}"))
 
 use() {
+    local module="$1"; shift
     local dir
     local IFS=:
     for dir in $USEPATH; do
-        if [ -f "$dir/$1.sh" ]; then
-            source "$dir/$1.sh"
+        if [ -f "$dir/$module.sh" ]; then
+            source "$dir/$module.sh"
             return 0
         fi
     done
