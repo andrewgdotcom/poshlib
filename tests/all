@@ -1,0 +1,8 @@
+#!/bin/bash
+SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
+. ${SCRIPT_DIR}/../poshlib.sh
+use swine
+
+for i in $SCRIPT_DIR/test-*; do
+	$i || echo "$i failed!"
+done

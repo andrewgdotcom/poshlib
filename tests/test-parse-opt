@@ -2,6 +2,9 @@
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 . ${SCRIPT_DIR}/../poshlib.sh
 use swine
+use parse-opt
+
+eval $(parse-opt-init)
 
 #####
 # Set defaults here e.g. via envars, config
@@ -13,12 +16,10 @@ FORCE=
 OUTPUT=
 INPUT=
 
-declare -A PO_SHORT_MAP
 PO_SHORT_MAP["d::"]="DEBUG=x y z"
 PO_SHORT_MAP["v"]="VERBOSE"
 PO_SHORT_MAP["f"]="FORCE"
 
-declare -A PO_LONG_MAP
 PO_LONG_MAP["output:"]="OUTPUT"
 PO_LONG_MAP["input:"]="INPUT"
 PO_LONG_MAP["verbose"]="VERBOSE"
@@ -38,12 +39,39 @@ expected_output['--output="A +" --input "a # c" ']=",,,A +,a # c;"
 
 for input in "${!expected_output[@]}"; do
     eval set -- $input
-    . ${SCRIPT_DIR}/../parse-opt.sh
-    output="$DEBUG,$FORCE,$VERBOSE,$OUTPUT,$INPUT;$*"
+    eval $(parse-opt)
+    output="${DEBUG:-},${FORCE:-},${VERBOSE:-},${OUTPUT:-},${INPUT:-};$*"
     if [[ "$output" != "${expected_output[$input]}" ]]; then
         echo "Failed on '$input'"
         echo "   expect '${expected_output[$input]}'"
         echo "      got '$output'"
     fi
     DEBUG= FORCE= VERBOSE= OUTPUT= INPUT=
+done
+
+# Now do the same for parse-opt-simple
+
+PO_SIMPLE_PREFIX="TEST_"
+PO_SIMPLE_FLAGS="VERBOSE force"
+PO_SIMPLE_PARAMS="OUTPUT input"
+
+expected_output=()
+
+expected_output[' ']=",,,,;"
+expected_output['foo bar wibble']=",,,,;foo bar wibble"
+expected_output['--force --no-force']=",false,,,;"
+expected_output['--no-force --force']=",true,,,;"
+expected_output['--output=- --input "--" ']=",,,-,--;"
+expected_output['--output="A +" --input "a # c" ']=",,,A +,a # c;"
+
+for input in "${!expected_output[@]}"; do
+    eval set -- $input
+    eval $(parse-opt-simple)
+    output=",${TEST_FORCE:-},${TEST_VERBOSE:-},${TEST_OUTPUT:-},${TEST_INPUT:-};$*"
+    if [[ "$output" != "${expected_output[$input]}" ]]; then
+        echo "Failed on '$input'"
+        echo "   expect '${expected_output[$input]}'"
+        echo "      got '$output'"
+    fi
+    TEST_FORCE= TEST_VERBOSE= TEST_OUTPUT= TEST_INPUT=
 done

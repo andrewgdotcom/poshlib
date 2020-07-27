@@ -7,18 +7,47 @@
 # to avoid naming clash. DO NOT USE __PO__<*> anywhere in the calling script.
 ################################################################################
 
-# PO_SHORT_MAP and PO_LONG_MAP must be declared in the calling script, e.g.:
+#############
+# SIMPLE USAGE
+#############
+#
+# PO_SIMPLE_PREFIX, PO_SIMPLE_FLAGS and PO_SIMPLE_PARAMS must be defined in the
+# calling script, e.g.:
 #
 # --
-# declare -A PO_SHORT_MAP
+# use parse-opt
+#
+# PO_SIMPLE_PREFIX="COMMAND"
+# PO_SIMPLE_PARAMS="OUTPUT"
+# PO_SIMPLE_FLAGS="VERBOSE FORCE"
+#
+# eval $(parse-opt-simple)
+# --
+#
+# PO_SIMPLE_PARAMS contains a list of names of with-value long options (minus
+# leading --), and PO_SIMPLE_FLAGS contains a list of names of no-value options.
+# Envar names will be coerced to uppercase and prefixed by PO_SIMPLE_PREFIX.
+# Option names will be coerced to lowercase. No default values can be supplied.
+
+#############
+# FULL USAGE
+#############
+#
+# PO_SHORT_MAP and PO_LONG_MAP must be populated in the calling script, e.g.:
+#
+# --
+# use parse-opt
+# eval $(parse-opt-init)
+#
 # PO_SHORT_MAP["d::"]="DEBUG=1"
 # PO_SHORT_MAP["v"]="VERBOSE"
 # PO_SHORT_MAP["f"]="FORCE"
 #
-# declare -A PO_LONG_MAP
 # PO_LONG_MAP["output:"]="OUTPUT"
 # PO_LONG_MAP["comment::"]="COMMENT=no comment"
 # PO_LONG_MAP["verbose"]="VERBOSE"
+#
+# eval $(parse-opt)
 # --
 #
 # A single colon in the key indicates that the command-line option requires a
@@ -40,7 +69,6 @@
 ! getopt --test > /dev/null
 if [[ ${PIPESTATUS[0]} -ne 4 ]]; then
     echo "Enhanced getopt not found!" >&2
-    echo "exit 101"
     exit 1
 fi
 
@@ -69,7 +97,6 @@ __PO__canonicalize_argv() {
             "${key%::}" == "${key}" ]]; then
             # sanity failure!
             echo "PANIC: non-optional key '$key' must not have a default value" >&2
-            echo "exit 104"
             exit 4
         fi
     done
@@ -80,7 +107,6 @@ __PO__canonicalize_argv() {
             "${key%::}" == "${key}" ]]; then
             # sanity failure!
             echo "PANIC: non-optional key '$key' must not have a default value" >&2
-            echo "exit 104"
             exit 4
         fi
         if [[ "$key" == "${key%:}" ]]; then
@@ -96,7 +122,6 @@ __PO__canonicalize_argv() {
         -l "$(IFS=,;echo "${!PO_LONG_MAP[*]}","${!inverses[*]}")" \
         --name "$0" -- "$@")
     if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
-        echo "exit 102"
         exit 2
     fi
 
@@ -109,7 +134,7 @@ __PO__parse_argv() {
     local opt
     local variable
     while true; do
-        if [[ "$1" == "--" ]]; then
+        if [[ "${1:-}" == "--" ]]; then
             # stop processing options
             shift
             break
@@ -119,7 +144,7 @@ __PO__parse_argv() {
             # we can test opt==key below to see if the option expects a value
             opt="${key%%:*}"
             variable="${PO_SHORT_MAP[$key]}"
-            if [[ "$1" == "-$opt" ]]; then
+            if [[ "${1:-}" == "-$opt" ]]; then
                 if [[ "$opt" == "$key" ]]; then
                     __PO__set_var "${variable}" "true"
                     shift
@@ -136,7 +161,7 @@ __PO__parse_argv() {
             # we can test opt==key below to see if the option expects a value
             opt="${key%%:*}"
             variable="${PO_LONG_MAP[$key]}"
-            if [[ "$1" == "--$opt" ]]; then
+            if [[ "${1:-}" == "--$opt" ]]; then
                 if [[ "$opt" == "$key" ]]; then
                     __PO__set_var "${variable}" "true"
                     shift
@@ -146,20 +171,18 @@ __PO__parse_argv() {
                     shift 2
                     continue 2
                 fi
-            elif [[ "$1" == "--no-$opt" ]]; then
+            elif [[ "${1:-}" == "--no-$opt" ]]; then
                 if [[ "$opt" == "$key" ]]; then
                     __PO__set_var "${variable}" "false"
                     shift
                     continue 2
                 else
                     echo "PANIC when parsing options, aborting" >&2
-                    echo "exit 103"
                     exit 3
                 fi
             fi
         done
         echo "PANIC when parsing options, aborting" >&2
-        echo "exit 103"
         exit 3
     done
 
@@ -169,5 +192,31 @@ __PO__parse_argv() {
     echo set -- $(printf ' %q' "$@")
 }
 
-eval $(__PO__canonicalize_argv "$@")
-eval $(__PO__parse_argv "$@")
+parse-opt-init() {
+    echo 'declare -A PO_SHORT_MAP; declare -A PO_LONG_MAP;'
+}
+
+parse-opt() {
+    echo 'eval $(__PO__canonicalize_argv "$@");'
+    echo 'eval $(__PO__parse_argv "$@");'
+}
+
+parse-opt-simple() {
+    # Reduce boilerplate even further
+    parse-opt-init
+
+    # Split on default whitespace
+    local IFS=$' \t\n'
+    # Coerce prefix to upper case
+    PO_SIMPLE_PREFIX="$(tr a-z- A-Z_ <<< ${PO_SIMPLE_PREFIX:-})"
+    # Coerce argument names to lower case and the corresponding envars to upper case
+    for i in ${PO_SIMPLE_PARAMS}; do
+        echo "PO_LONG_MAP[$(tr A-Z_ a-z- <<< $i):]=${PO_SIMPLE_PREFIX}$(tr a-z- A-Z_ <<< $i);"
+    done
+    # and for flags
+    for i in ${PO_SIMPLE_FLAGS}; do
+        echo "PO_LONG_MAP[$(tr A-Z_ a-z- <<< $i)]=${PO_SIMPLE_PREFIX}$(tr a-z- A-Z_ <<< $i);"
+    done
+
+    parse-opt
+}

@@ -25,13 +25,30 @@ Incant the following at the top of your script:
 . /path/to/poshlib/poshlib.sh
 ```
 
-You can now enable the separate modules with the command `use MODULE`.
+You can now enable the individual modules with `use MODULE`.
+
+You can extend poshlib with your own modules by appending paths to the envar `USEPATH`, using the same colon-separated format as `PATH`. The default `USEPATH` is `/path/to/poshlib`.
 
 ## Modules
 
 ### parse-opt - boilerplate wrapper for extended getopt(1)
 
-This module defines no functions, as it can only be invoked once per shell. You should define the associative arrays PO_SHORT_OPTIONS and PO_LONG_OPTIONS *above* the `use parse-opt` invocation, below which the named variables are populated with the arguments to their corresponding command line flags. The flags and arguments are excised from ARGV leaving only positional arguments.
+This module provides routines for parsing GNU-style longopts. All of the functions *must* be invoked using `eval` in order to modify the calling script's ARGV.
+
+The full-featured version is:
+
+* eval $(parse-opt-init)
+* eval $(parse-opt)
+
+You MUST populate the associative arrays PO_SHORT_OPTIONS and PO_LONG_OPTIONS after `eval $(parse-opt-init)` and before `eval $(parse-opt)`. The named variables are initialised with the arguments to their corresponding command line flags. The options are excised from ARGV leaving only positional arguments.
+
+Alternatively one can use a simplified system, at the cost of flexibility:
+
+* eval $(parse-opt-simple)
+
+This automatically creates the mappings between options and environment variables, however it is not possible to specify default values or short options using this method.
+
+See the comments at the top of parse-opt.sh for full instructions.
 
 ### swine - make bash a little bit more like perl
 
