@@ -5,7 +5,7 @@
 # This file has no magic number, and is not executable.
 # THIS IS INTENTIONAL as it should never be executed, only sourced.
 #
-# . /path/to/poshlib/init
+# . /path/to/poshlib/poshlib.sh
 ################################################################################
 
 # Always clobber USEPATH; an inherited USEPATH can be used for shenanigans.

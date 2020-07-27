@@ -22,7 +22,7 @@ git submodule update --init --recursive
 Incant the following at the top of your script:
 
 ```
-. /path/to/poshlib/init
+. /path/to/poshlib/poshlib.sh
 ```
 
 You can now enable the separate modules with the command `use MODULE`.
@@ -47,3 +47,7 @@ This module sets some shell option defaults to make it more like perl's `strict`
 This is useful if you are passing a script via ansible to a machine that does not have poshlib installed. It defines one function:
 
 * flatten
+
+### rposh - run a poshlib script with `use` dependencies on a remote environment
+
+* rscript

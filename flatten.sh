@@ -39,11 +39,14 @@ flatten() { (
     while IFS= read -r input; do
         if
             module=$(say "$input" | awk '$1=="use" {print $2}')
-            [ $module -a ! $continuation ]
+            [ -n "$module" -a -z "$continuation" ]
         then
             say "# BEGIN FLATTEN USE $module"
             recurse "$module"
             say "# END FLATTEN USE $module"
+        elif [ "${input#.}" != "$input" -o "${input#source}" != "$input" ] &&
+                [ "${input%poshlib.sh}" != "${input}" ]; then
+            say "# FLATTENED POSHLIB"
         else
             say "$input"
         fi

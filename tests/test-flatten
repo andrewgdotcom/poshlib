@@ -1,5 +1,5 @@
 #!/bin/bash
-. $(dirname "${BASH_SOURCE[0]}")/../init
+. $(dirname "${BASH_SOURCE[0]}")/../poshlib.sh
 use swine
 use flatten
 
@@ -11,8 +11,9 @@ fi
 tmpdir=$(mktemp -d)
 
 flatten "${BASH_SOURCE[0]}" > $tmpdir/file1
+chmod +x "$tmpdir/file1"
 
-/bin/bash "$tmpdir/file1" last 2>/dev/null > $tmpdir/file2
+$tmpdir/file1 last > $tmpdir/file2
 
 if ! diff -q "$tmpdir/file1" "$tmpdir/file2" 2>/dev/null; then
     die 1 "flattening not idempotent"

@@ -1,9 +1,6 @@
 #!/bin/bash
-. $(dirname "${BASH_SOURCE[0]}")/../init || exit 101
+. $(dirname "${BASH_SOURCE[0]}")/../poshlib.sh
 use swine
-
-# contains
-contains wibble foo bar wibble
 
 # say
 test="Hello \n this should not be line broken"
@@ -15,6 +12,9 @@ fi
 if [ "$test" != "$(warn "$test" 2>&1)" ]; then
     die 1 "failure in warn"
 fi
+
+# contains
+contains wibble foo bar wibble
 
 # die
 die 0 "" 2>/dev/null
