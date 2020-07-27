@@ -3,6 +3,8 @@
 use swine
 use rposh
 
-if [ "$*" != "last" ]; then
-    rscript localhost "${BASH_SOURCE[0]}" "last"
+if [ "${1:-}" == "" ]; then
+    rscript localhost "${BASH_SOURCE[0]}" "last" "test"
+elif [ "${1:-}" != "last" ]; then
+    die 1 "Mangled arguments to test-rposh"
 fi

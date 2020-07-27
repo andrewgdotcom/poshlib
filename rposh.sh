@@ -25,12 +25,6 @@ rscript() { (
     flatten "$command" > $tmpdir/command
     chmod +x $tmpdir/command
 
-    # sanitise arguments
-    args=()
-    for i in "$@"; do
-        args=(${args[@]} $(printf %q $i))
-    done
-
     RPOSH_SSH_OPTIONS=("${RPOSH_SSH_OPTIONS[@]}" "-o" "ControlPath=${tmpdir}/${target}")
     [ -n "${RPOSH_SSH_KEEPALIVE:-}" ] || RPOSH_SSH_KEEPALIVE=60
 
@@ -43,7 +37,7 @@ rscript() { (
     scp -q -p "${RPOSH_SSH_OPTIONS[@]}" -- \
         "$tmpdir/command" "${target}:${remote_tmpdir}/command"
     ssh "${RPOSH_SSH_OPTIONS[@]}" -- \
-        "$target" "$remote_tmpdir/command" "${args[@]}"
+        "$target" "$remote_tmpdir/command" $(printf ' %q' "$@")
 
     # shut down controlmaster connection
     ssh "${RPOSH_SSH_OPTIONS[@]}" -O exit -- "$target" 2> /dev/null
