@@ -1,12 +1,13 @@
 # poshlib
 A posix shell utility library
 
-To include in your git project, incant the following inside your git repo:
+To include in your project, incant the following inside your git repo:
 
 ```
 git submodule add https://github.com/andrewgdotcom/poshlib
 git submodule sync --recursive
 git submodule update --init --recursive
+git commit -m "Add poshlib" poshlib
 ```
 
 or alternatively, if you are using git+ssh:
@@ -15,13 +16,33 @@ or alternatively, if you are using git+ssh:
 git submodule add git@github.com:andrewgdotcom/poshlib
 git submodule sync --recursive
 git submodule update --init --recursive
+git commit -m "Add poshlib" poshlib
 ```
 
-To update your project to use the latest version of poshlib, incant:
+To update your repo to use the latest version of poshlib, incant:
 
 ```
 git submodule update --recursive --remote poshlib
 git commit -m "Update poshlib" poshlib
+```
+
+When cloning your repo, users should incant:
+
+```
+git clone --recurse-submodules <project>
+```
+
+And when refreshing that clone, they should use:
+
+```
+git pull --recurse-submodules
+```
+
+IFF you have users who have already cloned a version of your repo that did not use submodules, and are updating to a version that does, they will need to initialise the submodules by hand:
+
+```
+git submodule sync --recursive
+git submodule update --init --recursive
 ```
 
 ## Initialisation
