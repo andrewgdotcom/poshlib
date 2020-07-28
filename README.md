@@ -17,6 +17,13 @@ git submodule sync --recursive
 git submodule update --init --recursive
 ```
 
+To update your project to use the latest version of poshlib, incant:
+
+```
+git submodule update --recursive --remote
+git commit -m "Update poshlib" poshlib
+```
+
 ## Initialisation
 
 Incant the following at the top of your script:
