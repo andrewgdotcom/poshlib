@@ -96,4 +96,6 @@ It defines one function, which prints the flattened script on stdout:
 
 ### rposh - run a poshlib script with `use` dependencies on a remote environment
 
+This requires a version of ssh(1) that supports ControlMaster.
+
 * rscript
