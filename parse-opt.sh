@@ -210,11 +210,11 @@ parse-opt-simple() {
     # Coerce prefix to upper case
     PO_SIMPLE_PREFIX="$(tr a-z- A-Z_ <<< ${PO_SIMPLE_PREFIX:-})"
     # Coerce argument names to lower case and the corresponding envars to upper case
-    for i in ${PO_SIMPLE_PARAMS}; do
+    for i in ${PO_SIMPLE_PARAMS:-}; do
         echo "PO_LONG_MAP[$(tr A-Z_ a-z- <<< $i):]=${PO_SIMPLE_PREFIX}$(tr a-z- A-Z_ <<< $i);"
     done
     # and for flags
-    for i in ${PO_SIMPLE_FLAGS}; do
+    for i in ${PO_SIMPLE_FLAGS:-}; do
         echo "PO_LONG_MAP[$(tr A-Z_ a-z- <<< $i)]=${PO_SIMPLE_PREFIX}$(tr a-z- A-Z_ <<< $i);"
     done
 
