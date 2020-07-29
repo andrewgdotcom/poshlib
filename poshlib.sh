@@ -51,7 +51,7 @@ use() {
             return 0
         fi
     done
-    echo "Could not find $1.sh in $USEPATH" 2>&1
+    echo "Could not find ${module}.sh in $USEPATH" 2>&1
     exit 101
 }
 
