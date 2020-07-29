@@ -117,3 +117,7 @@ It defines one function, which prints the flattened script on STDOUT:
 This requires a version of ssh(1) that supports ControlMaster.
 
 * rscript
+
+## Notes
+
+* poshlib currently only works with bash, but it is intended to (eventually) also support dash.
