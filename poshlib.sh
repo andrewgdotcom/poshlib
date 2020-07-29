@@ -12,7 +12,7 @@
 USEPATH=
 
 # Shell detector stolen from https://www.av8n.com/computer/shell-dialect-detect
-shell_detect() { (
+detect_shell() { (
     res1=$(export PATH=/dev/null/$$
       type -p 2>/dev/null)
     st1="$?"
@@ -55,9 +55,24 @@ use() {
     exit 101
 }
 
+declare_main() {
+    if [ $(detect_shell) == "bash" ]; then
+        # We expect to be in the second level of the bash call stack.
+        # If we are any deeper, then the calling code is not at the top.
+        # If it is not at the top, then it MUST NOT invoke a main function.
+        if [ -n "${BASH_SOURCE[2]}" ]; then
+            return 0
+        fi
+    else
+        echo "Shell not supported" >&2
+        return 1
+    fi
+    "$@"
+}
+
 # IFF we are using bash, we can initialise USEPATH automagically with bashisms.
 # Otherwise, we must set USEPATH in the calling script.
 # TODO: support other shells
-if [ $(shell_detect) == "bash" ]; then
+if [ $(detect_shell) == "bash" ]; then
     USEPATH=$(dirname $(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}"))
 fi

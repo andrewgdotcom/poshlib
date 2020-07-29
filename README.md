@@ -58,7 +58,25 @@ You can now enable the individual modules with `use MODULE`. Module names are th
 
 You can extend poshlib with your own modules by appending paths to the envar `USEPATH`, in the same colon-separated format as `PATH`. Under bash, the default value of `USEPATH` is `/path/to/poshlib`.
 
-## Modules
+### Standard routines
+
+The standard routines defined by poshlib are:
+
+* use
+* detect_shell
+* declare_main
+
+`detect_shell` will attempt to detect the calling shell, and will print one of `bash`, `dash`, `ksh93`, `zsh5` on STDOUT.
+
+`declare_main` can be used to make a script dual-purpose, i.e. it can be sourced with `use` or it can be executed directly. To avail of this, all its functionality should be contained within shell functions, and then the main function should be declared at the bottom of the file thus:
+
+```
+declare_main main_function "$@"
+```
+
+This statement will invoke `main_function` with the script arguments IFF the script has been executed. If the script has been sourced or used, then it will do nothing and it is the responsibility of the sourcing script to invoke any functions at a later point.
+
+## Optional modules
 
 ### parse-opt - routines for parsing GNU-style longopts
 
@@ -90,7 +108,7 @@ This module sets some shell option defaults to make it more like perl's `strict`
 
 ### flatten - convert a poshlib script with `use` dependencies into a flat script
 
-It defines one function, which prints the flattened script on stdout:
+It defines one function, which prints the flattened script on STDOUT:
 
 * flatten
 
