@@ -21,18 +21,6 @@ flatten() { (
         die 102 "Too many arguments to flatten() at line $(caller)"
     fi
 
-    recurse() {
-        local dir
-        local IFS=:
-        for dir in $USEPATH; do
-            if [ -f "$dir/$1.sh" ]; then
-                flatten "$dir/$1.sh"
-                return 0
-            fi
-        done
-        die 101 "Could not find $1.sh in $USEPATH"
-    }
-
     continuation=
 
     exec <"$script"
@@ -42,7 +30,7 @@ flatten() { (
             [ -n "$module" -a -z "$continuation" ]
         then
             say "# BEGIN FLATTEN USE $module"
-            recurse "$module"
+            __posh__descend flatten "$module"
             say "# END FLATTEN USE $module"
         elif [ "${input#.}" != "$input" -o "${input#source}" != "$input" ] &&
                 [ "${input%poshlib.sh}" != "${input}" ]; then

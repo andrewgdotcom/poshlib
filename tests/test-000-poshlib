@@ -1,11 +1,14 @@
 #!/bin/bash
 . $(dirname "${BASH_SOURCE[0]}")/../poshlib.sh
 
-output=$(detect_shell)
-if [ "$output" != "bash" ]; then
-	echo "Error in detect_shell, expected 'bash' got '$output'"
+### detect_shell ###
+
+if [ "$__posh__detected__shell" != "bash" ]; then
+	echo "Shell not detected, expected 'bash' got '$output'"
 	exit 1
 fi
+
+### declare_main ###
 
 tmpfile=$(mktemp)
 cat <<EOF >$tmpfile

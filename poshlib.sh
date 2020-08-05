@@ -8,36 +8,50 @@
 # . /path/to/poshlib/poshlib.sh
 ################################################################################
 
-# Always clobber USEPATH; an inherited USEPATH can be used for shenanigans.
-USEPATH=
+# Avoid reinitialization
+if [ "${__posh__stacktrace:-}" == "" ]; then
+    # Shell detector stolen from https://www.av8n.com/computer/shell-dialect-detect
+    __posh__detected__shell="$( (
+        res1=$(export PATH=/dev/null/$$
+          type -p 2>/dev/null)
+        st1="$?"
 
-# Shell detector stolen from https://www.av8n.com/computer/shell-dialect-detect
-detect_shell() { (
-    res1=$(export PATH=/dev/null/$$
-      type -p 2>/dev/null)
-    st1="$?"
+        res2=$(export PATH=/dev/null/$$
+          type declare 2>/dev/null)
+        st2="$?"        # not
 
-    res2=$(export PATH=/dev/null/$$
-      type declare 2>/dev/null)
-    st2="$?"        # not
+        # this version works without sed, and indeed without a $PATH
+        penult='nil'  ult=''
+        for word in $(echo $res2) ; do
+          penult="$ult"
+          ult="$word"
+        done
 
-    # this version works without sed, and indeed without a $PATH
-    penult='nil'  ult=''
-    for word in $(echo $res2) ; do
-      penult="$ult"
-      ult="$word"
-    done
+        tag="${st1}.${penult}_${ult}"
+        case "${tag}" in
+         0.shell_builtin) echo bash  ; exit ;;
+           127.not_found) echo dash  ; exit ;;
+                  2.nil_) echo ksh93 ; exit ;;
+         1.reserved_word) echo zsh5  ; exit ;;
+        esac
+    ) )"
+    [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: detected shell=$__posh__detected__shell" >&2
 
-    tag="${st1}.${penult}_${ult}"
-    case "${tag}" in
-     0.shell_builtin) echo bash  ; exit ;;
-       127.not_found) echo dash  ; exit ;;
-              2.nil_) echo ksh93 ; exit ;;
-     1.reserved_word) echo zsh5  ; exit ;;
-    esac
-) }
+    # Always clobber USEPATH; an inherited USEPATH can be used for shenanigans.
+    USEPATH=
+    # IFF we are using bash, we can initialise USEPATH automagically with bashisms.
+    # Otherwise, we must set USEPATH in the calling script.
+    # TODO: support other shells
+    if [ "$__posh__detected__shell" == "bash" ]; then
+        USEPATH=$(dirname $(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}"))
+    fi
 
-use() {
+    # Initialize a stacktrace
+    __posh__stacktrace="__posh__top"
+fi
+
+__posh__descend() {
+    local action="$1"; shift
     local module="$1"; shift
     local dir
     local IFS=:
@@ -47,7 +61,15 @@ use() {
     fi
     for dir in $USEPATH; do
         if [ -f "$dir/$module.sh" ]; then
-            . "$dir/$module.sh"
+            local safe_module=$(echo "$dir/$module.sh" | tr : _)
+            # prevent loops
+            [ "${__posh__stacktrace%:$safe_module}" == "$__posh__stacktrace" ] || return 0
+            [ "${__posh__stacktrace%:$safe_module:*}" == "$__posh__stacktrace" ] || return 0
+            __posh__stacktrace="$__posh__stacktrace:$safe_module"
+            [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: >> $__posh__stacktrace" >&2
+            "$action" "$dir/$module.sh"
+            [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: << $__posh__stacktrace" >&2
+            __posh__stacktrace="${__posh__stacktrace%:*}"
             return 0
         fi
     done
@@ -55,8 +77,13 @@ use() {
     exit 101
 }
 
+use() {
+    __posh__descend . "$1"
+}
+
 declare_main() {
-    if [ $(detect_shell) == "bash" ]; then
+    [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: declare_main $@" >&2
+    if [ "$__posh__detected__shell" == "bash" ]; then
         # We expect to be in the second level of the bash call stack.
         # If we are any deeper, then the calling code is not at the top.
         # If it is not at the top, then it MUST NOT invoke a main function.
@@ -67,12 +94,6 @@ declare_main() {
         echo "Shell not supported" >&2
         return 1
     fi
+    [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: at top, running main" >&2
     "$@"
 }
-
-# IFF we are using bash, we can initialise USEPATH automagically with bashisms.
-# Otherwise, we must set USEPATH in the calling script.
-# TODO: support other shells
-if [ $(detect_shell) == "bash" ]; then
-    USEPATH=$(dirname $(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}"))
-fi
