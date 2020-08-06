@@ -8,34 +8,3 @@ if [ "$__posh__detected__shell" != "bash" ]; then
 	exit 1
 fi
 
-### declare_main ###
-
-tmpfile=$(mktemp)
-cat <<EOF >$tmpfile
-#!/bin/bash
-. $(dirname "${BASH_SOURCE[0]}")/../poshlib.sh
-
-test() {
-	echo \$@
-}
-
-declare_main test "No error"
-EOF
-
-output=$(bash $tmpfile)
-if [ "$output" != "No error" ]; then
-	echo "Error in declare_main, code not reached: output='$output'"
-	exit 1
-fi
-rm $tmpfile
-
-cat <<EOF >$tmpfile
-#!/bin/bash
-. $(dirname "${BASH_SOURCE[0]}")/../poshlib.sh
-
-declare_main eval "echo Error in declare_main, this code should never be reached; exit 1"
-EOF
-
-. $tmpfile
-
-rm $tmpfile

@@ -1,0 +1,40 @@
+#!/bin/bash
+SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
+. $SCRIPT_DIR/../poshlib.sh
+USEPATH="$USEPATH:$SCRIPT_DIR/.."
+
+tmpfile=$(mktemp)
+
+# Beware the substitutions in the following!
+cat <<EOF >$tmpfile
+#!/bin/bash
+. $SCRIPT_DIR/../poshlib.sh
+USEPATH="$USEPATH"
+use main
+
+test() {
+	echo \$@
+}
+
+main test "No error"
+EOF
+
+output=$(bash $tmpfile)
+if [ "$output" != "No error" ]; then
+	echo "Error in main(), code not reached: output='$output'"
+	exit 1
+fi
+
+# Beware the substitutions in the following!
+cat <<EOF >$tmpfile
+#!/bin/bash
+. $SCRIPT_DIR/../poshlib.sh
+USEPATH="$USEPATH"
+use main
+
+main eval "echo Error in main(), this code should never be reached; exit 1"
+EOF
+
+. $tmpfile
+
+rm $tmpfile
