@@ -80,20 +80,3 @@ __posh__descend() {
 use() {
     __posh__descend . "$1"
 }
-
-declare_main() {
-    [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: declare_main $@" >&2
-    if [ "$__posh__detected__shell" == "bash" ]; then
-        # We expect to be in the second level of the bash call stack.
-        # If we are any deeper, then the calling code is not at the top.
-        # If it is not at the top, then it MUST NOT invoke a main function.
-        if [ -n "${BASH_SOURCE[2]}" ]; then
-            return 0
-        fi
-    else
-        echo "Shell not supported" >&2
-        return 1
-    fi
-    [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: at top, running main" >&2
-    "$@"
-}
