@@ -10,6 +10,9 @@
 
 # Avoid reinitialization
 if [ "${__posh__stacktrace:-}" == "" ]; then
+    # Initialize a stacktrace
+    __posh__stacktrace="__posh__top"
+
     # Shell detector stolen from https://www.av8n.com/computer/shell-dialect-detect
     __posh__detected__shell="$( (
         res1=$(export PATH=/dev/null/$$
@@ -45,9 +48,6 @@ if [ "${__posh__stacktrace:-}" == "" ]; then
     if [ "$__posh__detected__shell" == "bash" ]; then
         USEPATH=$(dirname $(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}"))
     fi
-
-    # Initialize a stacktrace
-    __posh__stacktrace="__posh__top"
 fi
 
 __posh__descend() {
@@ -56,7 +56,7 @@ __posh__descend() {
     local dir
     local IFS=:
     if [ -z "$USEPATH" ]; then
-        echo "You must define the envar USEPATH"
+        echo "# POSH_ERROR: You must define the envar USEPATH" >&2
         exit 101
     fi
     for dir in $USEPATH; do
@@ -73,7 +73,7 @@ __posh__descend() {
             return 0
         fi
     done
-    echo "Could not find ${module}.sh in $USEPATH" 2>&1
+    echo "# POSH_ERROR: Could not find ${module}.sh in $USEPATH" >&2
     exit 101
 }
 
