@@ -1,6 +1,6 @@
 #!/bin/bash
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
-. $SCRIPT_DIR/../poshlib.sh
+. $SCRIPT_DIR/../poshlib.sh || exit 1
 USEPATH="$USEPATH:$SCRIPT_DIR/.."
 
 tmpfile=$(mktemp)
@@ -8,7 +8,7 @@ tmpfile=$(mktemp)
 # Beware the substitutions in the following!
 cat <<EOF >$tmpfile
 #!/bin/bash
-. $SCRIPT_DIR/../poshlib.sh
+. $SCRIPT_DIR/../poshlib.sh || exit 1
 USEPATH="$USEPATH"
 use main
 
@@ -28,7 +28,7 @@ fi
 # Beware the substitutions in the following!
 cat <<EOF >$tmpfile
 #!/bin/bash
-. $SCRIPT_DIR/../poshlib.sh
+. $SCRIPT_DIR/../poshlib.sh || exit 1
 USEPATH="$USEPATH"
 use main
 

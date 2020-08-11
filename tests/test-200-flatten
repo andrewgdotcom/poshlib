@@ -1,5 +1,5 @@
 #!/bin/bash
-. $(dirname "${BASH_SOURCE[0]}")/../poshlib.sh
+. $(dirname "${BASH_SOURCE[0]}")/../poshlib.sh || exit 1
 use swine
 use flatten
 
