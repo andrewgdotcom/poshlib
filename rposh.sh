@@ -21,24 +21,28 @@ rscript() { (
     target="$1"; shift
     command="$1"; shift
 
+    : ${RPOSH_SSH_KEEPALIVE:=60}
+    # parse RPOSH_SSH_OPTIONS into an array
+    say "${RPOSH_SSH_OPTIONS:-}" | read -r -a ssh_options
+    if [ "${RPOSH_SUDO:-}" == true ]; then
+        pre_command=("sudo" "-u" "${SUDO_USER:-root}")
+    fi
     tmpdir=$(mktemp -d)
     flatten "$command" > $tmpdir/command
     chmod +x $tmpdir/command
-
-    RPOSH_SSH_OPTIONS=("${RPOSH_SSH_OPTIONS[@]}" "-o" "ControlPath=${tmpdir}/${target}")
-    [ -n "${RPOSH_SSH_KEEPALIVE:-}" ] || RPOSH_SSH_KEEPALIVE=60
+    ssh_options=("${ssh_options[@]}" "-o" "ControlPath=${tmpdir}/${target}")
 
     # start up a controlmaster connection and background it
-    ssh -f "-o" ControlMaster=true "${RPOSH_SSH_OPTIONS[@]}" -- \
+    ssh -f "-o" ControlMaster=true "${ssh_options[@]}" -- \
         "$target" "sleep $RPOSH_SSH_KEEPALIVE" &
 
-    remote_tmpdir=$(ssh "${RPOSH_SSH_OPTIONS[@]}" -- \
+    remote_tmpdir=$(ssh "${ssh_options[@]}" -- \
         "$target" "mktemp -d" < /dev/null)
-    scp -q -p "${RPOSH_SSH_OPTIONS[@]}" -- \
+    scp -q -p "${ssh_options[@]}" -- \
         "$tmpdir/command" "${target}:${remote_tmpdir}/command"
-    ssh "${RPOSH_SSH_OPTIONS[@]}" -- \
-        "$target" "$remote_tmpdir/command" $(printf ' %q' "$@")
+    ssh "${ssh_options[@]}" -- \
+        "$target" "${pre_command[@]}" "$remote_tmpdir/command" $(printf ' %q' "$@")
 
     # shut down controlmaster connection
-    ssh "${RPOSH_SSH_OPTIONS[@]}" -O exit -- "$target" 2> /dev/null
+    ssh "${ssh_options[@]}" -O exit -- "$target" 2> /dev/null
 ) }
