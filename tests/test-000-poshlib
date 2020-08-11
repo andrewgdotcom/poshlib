@@ -8,3 +8,12 @@ if [ "$__posh__detected__shell" != "bash" ]; then
 	exit 1
 fi
 
+### prependpath ###
+
+path=foo:bar
+__posh__prependpath path ../foo
+__posh__prependpath path .
+if [ "$path" != "${__posh__stacktrace##*:}:${__posh__stacktrace##*:}/../foo:foo:bar" ]; then
+	echo "Path prepending not working: path = $path"
+fi
+

@@ -83,18 +83,22 @@ __posh__descend() {
 }
 
 __posh__prependpath() {
-    local varname="$1"; shift
-    local path="$1"; shift
+    local __PPPP__varname="$1"; shift
+    local __PPPP__path="$1"; shift
     # make paths relative to script location, not PWD
     if [ "$__posh__detected__shell" == "bash" ]; then
-        if [ "${path#../}" != "$path" -o "${path#./}" != "$path" -o "$path" == "." -o "$path" == ".." ]; then
-            path="${__posh__stacktrace##*:}/${path#./}"
+        if [ "${__PPPP__path#../}" != "$__PPPP__path" -o "${__PPPP__path#./}" != "$__PPPP__path" ]; then
+            __PPPP__path="${__posh__stacktrace##*:}/${__PPPP__path#./}"
+        elif [ "$__PPPP__path" == ".." ]; then
+            __PPPP__path="${__posh__stacktrace##*:}/.."
+        elif [ "$__PPPP__path" == "." ]; then
+            __PPPP__path="${__posh__stacktrace##*:}"
         fi
     fi
-    if [ -n "${!varname}" ]; then
-        eval "$varname"=\""$path:${!varname}"\"
+    if [ -n "${!__PPPP__varname}" ]; then
+        eval "$__PPPP__varname"=\""$__PPPP__path:${!__PPPP__varname}"\"
     else
-        eval "$varname"=\""$path"\"
+        eval "$__PPPP__varname"=\""$__PPPP__path"\"
     fi
 }
 
