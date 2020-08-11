@@ -14,8 +14,7 @@ rscript() { (
     use parse-opt
 
     PO_SIMPLE_PREFIX="RPOSH"
-    PO_SIMPLE_FLAGS="SUDO"
-    PO_SIMPLE_PARAMS="SUDO_USER SSH_OPTIONS SSH_KEEPALIVE"
+    PO_SIMPLE_PARAMS="SUDO_USER SSH_USER SSH_OPTIONS SSH_KEEPALIVE"
     eval $(parse-opt-simple)
 
     target="$1"; shift
@@ -24,8 +23,11 @@ rscript() { (
     : ${RPOSH_SSH_KEEPALIVE:=60}
     # parse RPOSH_SSH_OPTIONS into an array
     say "${RPOSH_SSH_OPTIONS:-}" | read -r -a ssh_options
-    if [ "${RPOSH_SUDO:-}" == true ]; then
-        pre_command=("sudo" "-u" "${SUDO_USER:-root}")
+    if [ -n "${RPOSH_SSH_USER:-}" ]; then
+        ssh_options=("${ssh_options[@]}" "-l" "${RPOSH_SSH_USER}")
+    fi
+    if [ -n "${RPOSH_SUDO_USER:-}" ]; then
+        pre_command=("sudo" "-u" "${RPOSH_SUDO_USER}")
     fi
     tmpdir=$(mktemp -d)
     flatten "$command" > $tmpdir/command
