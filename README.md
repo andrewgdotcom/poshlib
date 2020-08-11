@@ -56,13 +56,20 @@ SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 
 You can now enable the individual modules with `use MODULE`. Module names are the filenames without the `.sh` suffix.
 
-You can extend poshlib with your own modules by appending paths to the envar `USEPATH`, in the same colon-separated format as `PATH`. Under bash, the default value of `USEPATH` is `/path/to/poshlib`.
+You can extend poshlib with your own modules:
+
+```
+use-from <path>
+```
+
+This prepends the given path to the module search path. Under bash, the default search path is `/path/to/poshlib`.
 
 ### Standard routines
 
 The standard routines defined by poshlib are:
 
 * use
+* use-from
 * detect_shell
 * declare_main
 

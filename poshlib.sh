@@ -88,5 +88,9 @@ use() {
 
 use-from() {
     local path="$1"; shift
-    USEPATH="$path:$USEPATH"
+    if [ -n "$USEPATH" ]; then
+        USEPATH="$path:$USEPATH"
+    else
+        USEPATH="$path"
+    fi
 }
