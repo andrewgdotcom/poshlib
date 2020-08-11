@@ -55,11 +55,16 @@ __posh__descend() {
     local module="$1"; shift
     local dir
     local IFS=:
-    if [ -z "$USEPATH" ]; then
+    if [ "$action" != "." ]; then
+        pathvariable=__POSH__${action}__PATH
+        descendpath="${!pathvariable}"
+    elif [ -n "$USEPATH" ]; then
+        descendpath="$USEPATH"
+    else
         echo "# POSH_ERROR: You must define the envar USEPATH" >&2
         exit 101
     fi
-    for dir in $USEPATH; do
+    for dir in $descendpath; do
         if [ -f "$dir/$module.sh" ]; then
             local safe_module=$(echo "$dir/$module.sh" | tr : _)
             # prevent loops
@@ -73,10 +78,15 @@ __posh__descend() {
             return 0
         fi
     done
-    echo "# POSH_ERROR: Could not find ${module}.sh in $USEPATH" >&2
+    echo "# POSH_ERROR: Could not find ${module}.sh in $descendpath" >&2
     exit 101
 }
 
 use() {
     __posh__descend . "$1"
+}
+
+use-from() {
+    local path="$1"; shift
+    USEPATH="$path:$USEPATH"
 }

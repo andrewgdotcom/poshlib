@@ -4,14 +4,12 @@
 # `source` or `.`, and the `use` command must appear on a line by itself.
 # Flattened dependencies will be recursively processed.
 #
-# BEWARE that flattening will be performed using the running shell's USEPATH,
-# and NOT the USEPATH that may be overridden in the target script's runtime.
-#
 # This tool produces the flattened output on STDOUT.
 ################################################################################
 
 flatten() { (
     use swine
+    : ${__POSH__flatten__PATH:=${USEPATH:-}}
 
     local script="$1"; shift
     if [ "$*" != "" ]; then
@@ -23,6 +21,11 @@ flatten() { (
     exec <"$script"
     while IFS= read -r input; do
         if
+            path=$(say "$input" | awk '$1=="use-from" {print $2}')
+            [ -n "$path" -a -z "$continuation" ]
+        then
+            __POSH__flatten__PATH="$path:$__POSH__flatten__PATH"
+        elif
             module=$(say "$input" | awk '$1=="use" {print $2}')
             [ -n "$module" -a -z "$continuation" ]
         then
