@@ -10,9 +10,6 @@
 
 # Avoid reinitialization
 if [ "${__posh__stacktrace:-}" == "" ]; then
-    # Initialize a stacktrace
-    __posh__stacktrace="."
-
     # Shell detector stolen from https://www.av8n.com/computer/shell-dialect-detect
     __posh__detected__shell="$( (
         res1=$(export PATH=/dev/null/$$
@@ -47,6 +44,13 @@ if [ "${__posh__stacktrace:-}" == "" ]; then
     # TODO: support other shells
     if [ "$__posh__detected__shell" == "bash" ]; then
         USEPATH=$(dirname $(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}"))
+        [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: init USEPATH=$USEPATH" >&2
+        # Initialize a stacktrace
+        __posh__stacktrace="$(dirname $(readlink "${BASH_SOURCE[1]}" || echo "${BASH_SOURCE[1]}"))"
+        [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: init stacktrace=$__posh__stacktrace" >&2
+    else
+        USEPATH=""
+        __posh__stacktrace="__UNKNOWN__"
     fi
 fi
 
@@ -107,5 +111,5 @@ use() {
 }
 
 use-from() {
-    USEPATH=$(__posh__prependpath "$USEPATH" "$1")
+    USEPATH=$(__posh__prependpath "${USEPATH:-}" "$1")
 }
