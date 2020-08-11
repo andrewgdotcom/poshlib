@@ -24,7 +24,7 @@ flatten() { (
             path=$(say "$input" | awk '$1=="use-from" {print $2}')
             [ -n "$path" -a -z "$continuation" ]
         then
-            __posh__prependpath __POSH__flatten__PATH "$path"
+            __POSH__flatten__PATH=$(__posh__prependpath "$__POSH__flatten__PATH" "$path")
         elif
             module=$(say "$input" | awk '$1=="use" {print $2}')
             [ -n "$module" -a -z "$continuation" ]

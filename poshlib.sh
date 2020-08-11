@@ -83,22 +83,22 @@ __posh__descend() {
 }
 
 __posh__prependpath() {
-    local __PPPP__varname="$1"; shift
-    local __PPPP__path="$1"; shift
+    local pathlist="$1"; shift
+    local path="$1"; shift
     # make paths relative to script location, not PWD
     if [ "$__posh__detected__shell" == "bash" ]; then
-        if [ "${__PPPP__path#../}" != "$__PPPP__path" -o "${__PPPP__path#./}" != "$__PPPP__path" ]; then
-            __PPPP__path="${__posh__stacktrace##*:}/${__PPPP__path#./}"
-        elif [ "$__PPPP__path" == ".." ]; then
-            __PPPP__path="${__posh__stacktrace##*:}/.."
-        elif [ "$__PPPP__path" == "." ]; then
-            __PPPP__path="${__posh__stacktrace##*:}"
+        if [ "${path#../}" != "$path" -o "${path#./}" != "$path" ]; then
+            path="${__posh__stacktrace##*:}/${path#./}"
+        elif [ "$path" == ".." ]; then
+            path="${__posh__stacktrace##*:}/.."
+        elif [ "$path" == "." ]; then
+            path="${__posh__stacktrace##*:}"
         fi
     fi
-    if [ -n "${!__PPPP__varname}" ]; then
-        eval "$__PPPP__varname"=\""$__PPPP__path:${!__PPPP__varname}"\"
+    if [ -n "$pathlist" ]; then
+        echo -E "$path:$pathlist"
     else
-        eval "$__PPPP__varname"=\""$__PPPP__path"\"
+        echo -E "$path"
     fi
 }
 
@@ -107,5 +107,5 @@ use() {
 }
 
 use-from() {
-    __posh__prependpath USEPATH "$1"
+    USEPATH=$(__posh__prependpath "$USEPATH" "$1")
 }
