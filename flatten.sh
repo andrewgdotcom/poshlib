@@ -1,8 +1,5 @@
 ################################################################################
 # Flatten a poshlib script with use dependencies into a static script.
-# This is particularly useful with e.g. `ansible -m script`, where the script
-# depends on other scripts/libs that would not otherwise be copied by ansible.
-#
 # Any libs/source files to be flattened MUST be sourced using `use` and not
 # `source` or `.`, and the `use` command must appear on a line by itself.
 # Flattened dependencies will be recursively processed.
@@ -33,7 +30,7 @@ flatten() { (
             __posh__descend flatten "$module"
             say "# END FLATTEN USE $module"
         elif [ "${input#.}" != "$input" -o "${input#source}" != "$input" ] &&
-                [ "${input%poshlib.sh}" != "${input}" ]; then
+                [ "${input%poshlib.sh *}" != "${input}" ]; then
             say "# FLATTENED POSHLIB"
         else
             say "$input"
