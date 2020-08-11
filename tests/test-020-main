@@ -1,7 +1,7 @@
 #!/bin/bash
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 . $SCRIPT_DIR/../poshlib.sh || exit 1
-use-from "$SCRIPT_DIR/.."
+use-from ".."
 
 tmpfile=$(mktemp)
 

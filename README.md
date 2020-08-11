@@ -62,7 +62,7 @@ You can extend poshlib with your own modules:
 use-from <path>
 ```
 
-This prepends the given path to the module search path. Under bash, the default search path is `/path/to/poshlib`.
+This prepends the given path to the module search path. Relative paths are relative to the script location. The default search path contains the directory from which poshlib.sh has been sourced.
 
 ### Standard routines
 

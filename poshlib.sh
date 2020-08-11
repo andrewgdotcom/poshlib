@@ -11,7 +11,7 @@
 # Avoid reinitialization
 if [ "${__posh__stacktrace:-}" == "" ]; then
     # Initialize a stacktrace
-    __posh__stacktrace="__posh__top"
+    __posh__stacktrace="."
 
     # Shell detector stolen from https://www.av8n.com/computer/shell-dialect-detect
     __posh__detected__shell="$( (
@@ -82,15 +82,26 @@ __posh__descend() {
     exit 101
 }
 
+__posh__prependpath() {
+    local varname="$1"; shift
+    local path="$1"; shift
+    # make paths relative to script location, not PWD
+    if [ "$__posh__detected__shell" == "bash" ]; then
+        if [ "${path#../}" != "$path" -o "${path#./}" != "$path" -o "$path" == "." -o "$path" == ".." ]; then
+            path="${__posh__stacktrace##*:}/${path#./}"
+        fi
+    fi
+    if [ -n "${!varname}" ]; then
+        eval "$varname"=\""$path:${!varname}"\"
+    else
+        eval "$varname"=\""$path"\"
+    fi
+}
+
 use() {
     __posh__descend . "$1"
 }
 
 use-from() {
-    local path="$1"; shift
-    if [ -n "$USEPATH" ]; then
-        USEPATH="$path:$USEPATH"
-    else
-        USEPATH="$path"
-    fi
+    __posh__prependpath USEPATH "$1"
 }
