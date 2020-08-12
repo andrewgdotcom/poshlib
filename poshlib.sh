@@ -9,7 +9,7 @@
 ################################################################################
 
 # Avoid reinitialization
-if [ "${__posh__stacktrace:-}" == "" ]; then
+if [ "${__posh__callstack:-}" == "" ]; then
     # Shell detector stolen from https://www.av8n.com/computer/shell-dialect-detect
     __posh__detected__shell="$( (
         res1=$(export PATH=/dev/null/$$
@@ -45,12 +45,12 @@ if [ "${__posh__stacktrace:-}" == "" ]; then
     if [ "$__posh__detected__shell" == "bash" ]; then
         __posh__usepath=$(dirname $(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}"))
         [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: INIT usepath=$__posh__usepath" >&2
-        # Initialize a stacktrace
-        __posh__stacktrace="$(readlink "${BASH_SOURCE[1]}" || echo "${BASH_SOURCE[1]}")"
-        [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: INIT stacktrace=$__posh__stacktrace" >&2
+        # Initialize a callstack
+        __posh__callstack="$(readlink "${BASH_SOURCE[1]}" || echo "${BASH_SOURCE[1]}")"
+        [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: INIT callstack=$__posh__callstack" >&2
     else
         __posh__usepath=""
-        __posh__stacktrace="__UNKNOWN__"
+        __posh__callstack="__UNKNOWN__"
     fi
 fi
 
@@ -61,28 +61,28 @@ __posh__descend() {
     local IFS=:
     if [ "$action" != "." ]; then
         path_variable=__posh__${action}__path
-        trace_variable=__posh__${action}__trace
+        stack_variable=__posh__${action}__stack
     elif [ -n "${__posh__usepath:-}" ]; then
         path_variable="__posh__usepath"
-        trace_variable="__posh__stacktrace"
+        stack_variable="__posh__callstack"
     else
         echo "# POSH_ERROR: unexpected descent before init" >&2
         exit 101
     fi
     for dir in ${!path_variable}; do
         if [ -f "$dir/$module.sh" ]; then
-            local trace="${!trace_variable}"
+            local stack="${!stack_variable}"
             local safe_module=$(echo "$dir/$module.sh" | tr : _)
             # prevent loops
-            [ "${trace%:$safe_module}" == "$trace" ] || return 0
-            [ "${trace%:$safe_module:*}" == "$trace" ] || return 0
-            trace="${trace}:$safe_module"
-            eval "$trace_variable"="$trace" # NASTY
-            [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: $trace_variable=$trace" >&2
+            [ "${stack#$safe_module:}" == "$stack" ] || return 0
+            [ "${stack#*:$safe_module:}" == "$stack" ] || return 0
+            stack="$safe_module:$stack"
+            eval "$stack_variable=\"$stack\"" # NASTY
+            [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: $stack_variable=$stack" >&2
             "$action" "$dir/$module.sh"
-            trace="${trace%:*}"
-            eval "$trace_variable"="$trace" # NASTY
-            [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: $trace_variable=$trace" >&2
+            stack="${stack#*:}"
+            eval "$stack_variable=\"$stack\"" # NASTY
+            [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: $stack_variable=$stack" >&2
             return 0
         fi
     done
@@ -93,10 +93,10 @@ __posh__descend() {
 __posh__prependpath() {
     local pathlist="$1"; shift
     local newpath="$1"; shift
-    local trace="$1"; shift
+    local stack="$1"; shift
     # make paths relative to script location, not PWD
     if [ "$__posh__detected__shell" == "bash" ]; then
-        stacktop_dir=$(dirname ${trace##*:})
+        stacktop_dir=$(dirname ${stack%%:*})
         if [ "$path" == "." ]; then
             newpath="$stacktop_dir"
         elif [ "${newpath#/}" == "$newpath" ]; then
@@ -115,5 +115,5 @@ use() {
 }
 
 use-from() {
-    __posh__usepath=$(__posh__prependpath "${__posh__usepath:-}" "$1" "$__posh__stacktrace")
+    __posh__usepath=$(__posh__prependpath "${__posh__usepath:-}" "$1" "$__posh__callstack")
 }

@@ -23,7 +23,7 @@ flatten() { (
             path=$(say "$input" | awk '$1=="use-from" {print $2}')
             [ -n "$path" -a -z "$continuation" ]
         then
-            __posh__flatten__path=$(__posh__prependpath "$__posh__flatten__path" "$path" "$__posh__flatten__trace")
+            __posh__flatten__path=$(__posh__prependpath "$__posh__flatten__path" "$path" "$__posh__flatten__stack")
             say "# FLATTEN: USE FROM $path >> $__posh__flatten__path"
         elif
             module=$(say "$input" | awk '$1=="use" {print $2}')
@@ -36,16 +36,16 @@ flatten() { (
             [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: FLATTEN: END USE $module"
         elif [ "${input#.}" != "$input" -o "${input#source}" != "$input" ] &&
                 [ "${input%poshlib.sh *}" != "${input}" ]; then
-            # Simulate a fresh usepath and stacktrace while flattening.
+            # Simulate a fresh usepath and callstack while flattening.
             # WARNING: this may end up using a different version of poshlib.
             # Also, this only works if nobody has done anything nonstandard to
             # __posh__usepath since we initialised it.
             __posh__flatten__path="${__posh__usepath##*:}"
-            __posh__flatten__trace="${script}"
+            __posh__flatten__stack="${script}"
             say "# FLATTEN: INIT usepath=$__posh__flatten__path"
-            say "# FLATTEN: INIT stacktrace=$__posh__flatten__trace"
+            say "# FLATTEN: INIT callstack=$__posh__flatten__stack"
             [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: FLATTEN: INIT flatten_path=$__posh__flatten__path"
-            [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: FLATTEN: INIT flatten_trace=$__posh__flatten__trace"
+            [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: FLATTEN: INIT flatten_stack=$__posh__flatten__stack"
         else
             say "$input"
         fi
