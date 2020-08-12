@@ -19,10 +19,13 @@ rscript() { (
     PO_SIMPLE_PARAMS="SUDO_USER SSH_USER SSH_OPTIONS SSH_KEEPALIVE"
     eval $(parse-opt-simple)
 
-    target="$1"; shift
+    IFS=, read -r -a hosts <<< $1; shift
     command="$1"; shift
 
-    : ${RPOSH_SSH_KEEPALIVE:=60}
+    default_keepalive=60
+
+    [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: hosts=(${hosts[*]})"
+
     # parse RPOSH_SSH_OPTIONS into an array, and intersperse them with "-o" flags
     say "${RPOSH_SSH_OPTIONS:-}" | read -r -a ssh_key_values
     for option in "${ssh_key_values[@]}"; do
@@ -38,23 +41,39 @@ rscript() { (
     tmpdir=$(mktemp -d)
     flatten "$command" > $tmpdir/command
     chmod +x $tmpdir/command
-    ssh_options=("${ssh_options[@]}" "-o" "ControlPath=${tmpdir}/${target}")
     [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: ssh_options=(${ssh_options[*]})"
 
-    # start up a controlmaster connection and background it
-    [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: starting control connection to $target ..."
-    ssh -f "-o" ControlMaster=true "${ssh_options[@]}" -- \
-        "$target" "sleep $RPOSH_SSH_KEEPALIVE" &
+    for target in "${hosts[@]}"; do
+        if [ -n "${XDG_RUNTIME_DIR:-}" ]; then
+            controldir="${XDG_RUNTIME_DIR}/rposh"
+            mkdir -m 0700 -p $controldir
+        else
+            controldir=$tmpdir
+        fi
+        controlpath="${controldir}/${target}"
 
-    remote_tmpdir=$(ssh "${ssh_options[@]}" -- \
-        "$target" "mktemp -d" < /dev/null)
-    scp -q -p "${ssh_options[@]}" -- \
-        "$tmpdir/command" "${target}:${remote_tmpdir}/command"
-    [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: remote_command=${pre_command[*]} $remote_tmpdir/command"
-    ssh "${ssh_options[@]}" -- \
-        "$target" "${pre_command[@]}" "$remote_tmpdir/command" $(printf ' %q' "$@")
+        if [ ! -e "$controlpath" ]; then
+            # start up a controlmaster connection and background it
+            [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: opening control socket $controlpath ..."
+            ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" \
+                -f "-o" ControlMaster=true -- \
+                "$target" "sleep ${RPOSH_SSH_KEEPALIVE:-$default_keepalive}" &
+        else
+            [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: reusing control socket $controlpath ..."
+        fi
 
-    # shut down controlmaster connection
-    ssh "${ssh_options[@]}" -O exit -- "$target" 2> /dev/null
-    [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: shut down connection to $target"
+        remote_tmpdir=$(ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
+            "$target" "mktemp -d" < /dev/null)
+        scp -q -p "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
+            "$tmpdir/command" "${target}:${remote_tmpdir}/command"
+        [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: remote_command=${pre_command[*]} $remote_tmpdir/command"
+        ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
+            "$target" "${pre_command[@]}" "$remote_tmpdir/command" $(printf ' %q' "$@")
+
+        if [ -z "${RPOSH_SSH_KEEPALIVE:-}" -o -z "${XDG_RUNTIME_DIR:-}" ]; then
+            # shut down controlmaster connection
+            ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -O exit -- "$target" 2> /dev/null
+            [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: shut down connection to $target"
+        fi
+    done
 ) }
