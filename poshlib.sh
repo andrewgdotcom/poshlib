@@ -111,9 +111,12 @@ __posh__prependpath() {
 }
 
 use() {
+    [ -z "${POSH_DEBUG:-}" ] || echo  "# USE $1" >&2
     __posh__descend . "$1"
+    [ -z "${POSH_DEBUG:-}" ] || echo  "# END USE $1" >&2
 }
 
 use-from() {
     __posh__usepath=$(__posh__prependpath "${__posh__usepath:-}" "$1" "$__posh__callstack")
+    [ -z "${POSH_DEBUG:-}" ] || echo  "# USE FROM $path >> $__posh__flatten__path" >&2
 }

@@ -17,11 +17,12 @@ tmpdir=$(dirname $tmpfile)
 cat <<EOF >$tmpfile
 #!/bin/bash
 . $SCRIPT_DIR/../poshlib.sh || exit 1
+stack="\${BASH_SOURCE[0]}"
 
 path=a
-path=\$(__posh__prependpath \$path ../b)
-path=\$(__posh__prependpath \$path ./c)
-path=\$(__posh__prependpath \$path /d)
+path=\$(__posh__prependpath "\$path" ../b "\$stack")
+path=\$(__posh__prependpath "\$path" ./c "\$stack")
+path=\$(__posh__prependpath "\$path" /d "\$stack")
 echo \$path
 EOF
 

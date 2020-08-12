@@ -27,9 +27,9 @@ cat <<EOF > $tmpdir/command
 #!/bin/bash
 SCRIPT_DIR=\$(dirname "\${BASH_SOURCE[0]}")
 . \$SCRIPT_DIR/poshlib/poshlib.sh || exit 1
-
 use swine
-echo "Success"
+# do nothing
+:
 EOF
 /bin/bash $tmpdir/command
 flatten $tmpdir/command > $tmpdir/newcommand
