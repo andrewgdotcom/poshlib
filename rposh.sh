@@ -23,8 +23,11 @@ rscript() { (
     command="$1"; shift
 
     : ${RPOSH_SSH_KEEPALIVE:=60}
-    # parse RPOSH_SSH_OPTIONS into an array
-    say "${RPOSH_SSH_OPTIONS:-}" | read -r -a ssh_options
+    # parse RPOSH_SSH_OPTIONS into an array, and intersperse them with "-o" flags
+    say "${RPOSH_SSH_OPTIONS:-}" | read -r -a ssh_key_values
+    for option in "${ssh_key_values[@]}"; do
+        ssh_options=("${ssh_options[@]}" "-o" "$(printf '%q' "$option")")
+    done
     if [ -n "${RPOSH_SSH_USER:-}" ]; then
         ssh_options=("${ssh_options[@]}" "-o" "User=${RPOSH_SSH_USER}")
     fi
