@@ -13,7 +13,9 @@ rscript() { (
     use flatten
     use parse-opt
 
-    PO_SIMPLE_PREFIX="RPOSH"
+    [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: COMMAND: rscript $*"
+
+    PO_SIMPLE_PREFIX="RPOSH_"
     PO_SIMPLE_PARAMS="SUDO_USER SSH_USER SSH_OPTIONS SSH_KEEPALIVE"
     eval $(parse-opt-simple)
 
@@ -24,17 +26,20 @@ rscript() { (
     # parse RPOSH_SSH_OPTIONS into an array
     say "${RPOSH_SSH_OPTIONS:-}" | read -r -a ssh_options
     if [ -n "${RPOSH_SSH_USER:-}" ]; then
-        ssh_options=("${ssh_options[@]}" "-l" "${RPOSH_SSH_USER}")
+        ssh_options=("${ssh_options[@]}" "-o" "User=${RPOSH_SSH_USER}")
     fi
     if [ -n "${RPOSH_SUDO_USER:-}" ]; then
         pre_command=("sudo" "-u" "${RPOSH_SUDO_USER}")
+        [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: pre_command=(${ssh_options[*]})"
     fi
     tmpdir=$(mktemp -d)
     flatten "$command" > $tmpdir/command
     chmod +x $tmpdir/command
     ssh_options=("${ssh_options[@]}" "-o" "ControlPath=${tmpdir}/${target}")
+    [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: ssh_options=(${ssh_options[*]})"
 
     # start up a controlmaster connection and background it
+    [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: starting control connection to $target ..."
     ssh -f "-o" ControlMaster=true "${ssh_options[@]}" -- \
         "$target" "sleep $RPOSH_SSH_KEEPALIVE" &
 
@@ -42,9 +47,11 @@ rscript() { (
         "$target" "mktemp -d" < /dev/null)
     scp -q -p "${ssh_options[@]}" -- \
         "$tmpdir/command" "${target}:${remote_tmpdir}/command"
+    [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: remote_command=${pre_command[*]} $remote_tmpdir/command"
     ssh "${ssh_options[@]}" -- \
         "$target" "${pre_command[@]}" "$remote_tmpdir/command" $(printf ' %q' "$@")
 
     # shut down controlmaster connection
     ssh "${ssh_options[@]}" -O exit -- "$target" 2> /dev/null
+    [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: shut down connection to $target"
 ) }

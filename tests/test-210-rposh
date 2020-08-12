@@ -4,7 +4,7 @@ use swine
 use rposh
 
 if [ "${1:-}" == "" ]; then
-    rscript localhost "${BASH_SOURCE[0]}" "last" "test"
+    rscript localhost --ssh-user=$USER --sudo-user=$USER "${BASH_SOURCE[0]}" "last" "test"
 elif [ "${1:-}" != "last" ]; then
     die 1 "Mangled arguments to test-rposh"
 fi

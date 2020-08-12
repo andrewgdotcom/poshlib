@@ -10,6 +10,8 @@
 flatten() { (
     use swine
 
+    [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: COMMAND: flatten $*"
+
     local script="$1"; shift
     if [ "$*" != "" ]; then
         die 102 "Too many arguments to flatten() at line $(caller)"
