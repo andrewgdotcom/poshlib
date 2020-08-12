@@ -1,5 +1,5 @@
 ################################################################################
-# Initialise poshlib. Define the `use` command and reset USEPATH to default.
+# Initialise poshlib. Define the `use` command and reset settings to default.
 # All other features are optional and can be imported using `use`.
 #
 # This file has no magic number, and is not executable.
@@ -37,19 +37,19 @@ if [ "${__posh__stacktrace:-}" == "" ]; then
     ) )"
     [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: detected shell=$__posh__detected__shell" >&2
 
-    # Always clobber USEPATH; an inherited USEPATH can be used for shenanigans.
-    USEPATH=
-    # IFF we are using bash, we can initialise USEPATH automagically with bashisms.
-    # Otherwise, we must set USEPATH in the calling script.
+    # Always clobber __posh__usepath to prevent shenanigans.
+    __posh__usepath=
+    # IFF we are using bash, we can initialise __posh__usepath automagically
+    # with bashisms. Otherwise, we must invoke `use-from` in the calling script.
     # TODO: support other shells
     if [ "$__posh__detected__shell" == "bash" ]; then
-        USEPATH=$(dirname $(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}"))
-        [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: init USEPATH=$USEPATH" >&2
+        __posh__usepath=$(dirname $(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}"))
+        [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: init usepath=$__posh__usepath" >&2
         # Initialize a stacktrace
         __posh__stacktrace="$(readlink "${BASH_SOURCE[1]}" || echo "${BASH_SOURCE[1]}")"
         [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: init stacktrace=$__posh__stacktrace" >&2
     else
-        USEPATH=""
+        __posh__usepath=""
         __posh__stacktrace="__UNKNOWN__"
     fi
 fi
@@ -59,16 +59,21 @@ __posh__descend() {
     local module="$1"; shift
     local dir
     local IFS=:
+    local descend_path
+    local descend_trace
     if [ "$action" != "." ]; then
-        pathvariable=__POSH__${action}__PATH
-        descendpath="${!pathvariable}"
-    elif [ -n "$USEPATH" ]; then
-        descendpath="$USEPATH"
+        path_variable=__posh__${action}__path
+        trace_variable=__posh__${action}__trace
+        descend_path="${!path_variable}"
+        descend_trace="${!trace_variable}"
+    elif [ -n "${__posh__usepath:-}" ]; then
+        descend_path="$__posh__usepath"
+        descend_trace="$__posh__stacktrace"
     else
-        echo "# POSH_ERROR: You must define the envar USEPATH" >&2
+        echo "# POSH_ERROR: initialization failure" >&2
         exit 101
     fi
-    for dir in $descendpath; do
+    for dir in $descend_path; do
         if [ -f "$dir/$module.sh" ]; then
             local safe_module=$(echo "$dir/$module.sh" | tr : _)
             # prevent loops
@@ -77,12 +82,12 @@ __posh__descend() {
             __posh__stacktrace="$__posh__stacktrace:$safe_module"
             [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: >> $__posh__stacktrace" >&2
             "$action" "$dir/$module.sh"
-            [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: << $__posh__stacktrace" >&2
             __posh__stacktrace="${__posh__stacktrace%:*}"
+            [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: << $__posh__stacktrace" >&2
             return 0
         fi
     done
-    echo "# POSH_ERROR: Could not find ${module}.sh in $descendpath" >&2
+    echo "# POSH_ERROR: Could not find ${module}.sh in $descend_path" >&2
     exit 101
 }
 
@@ -110,5 +115,5 @@ use() {
 }
 
 use-from() {
-    USEPATH=$(__posh__prependpath "${USEPATH:-}" "$1")
+    __posh__usepath=$(__posh__prependpath "${__posh__usepath:-}" "$1")
 }
