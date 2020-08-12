@@ -25,16 +25,17 @@ flatten() { (
             [ -n "$path" -a -z "$continuation" ]
         then
             __POSH__flatten__PATH=$(__posh__prependpath "$__POSH__flatten__PATH" "$path")
+            say "# USE FROM $__POSH__flatten__PATH"
         elif
             module=$(say "$input" | awk '$1=="use" {print $2}')
             [ -n "$module" -a -z "$continuation" ]
         then
-            say "# BEGIN FLATTEN USE $module"
+            say "# BEGIN USE $module"
             __posh__descend flatten "$module"
-            say "# END FLATTEN USE $module"
+            say "# END USE $module"
         elif [ "${input#.}" != "$input" -o "${input#source}" != "$input" ] &&
                 [ "${input%poshlib.sh *}" != "${input}" ]; then
-            say "# FLATTENED POSHLIB"
+            say "# INIT POSHLIB"
         else
             say "$input"
         fi
