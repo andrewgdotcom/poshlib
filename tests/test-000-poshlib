@@ -1,5 +1,6 @@
 #!/bin/bash
-. $(dirname "${BASH_SOURCE[0]}")/../poshlib.sh || exit 1
+SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
+. $SCRIPT_DIR/../poshlib.sh || exit 1
 
 ### detect_shell ###
 
@@ -10,10 +11,23 @@ fi
 
 ### prependpath ###
 
-path=foo:bar
-path=$(__posh__prependpath $path ../foo)
-path=$(__posh__prependpath $path .)
-if [ "$path" != "${__posh__stacktrace##*:}:${__posh__stacktrace##*:}/../foo:foo:bar" ]; then
+tmpfile=$(mktemp)
+tmpdir=$(dirname $tmpfile)
+
+cat <<EOF >$tmpfile
+#!/bin/bash
+. $SCRIPT_DIR/../poshlib.sh || exit 1
+
+path=a
+path=\$(__posh__prependpath \$path ../b)
+path=\$(__posh__prependpath \$path ./c)
+path=\$(__posh__prependpath \$path /d)
+echo \$path
+EOF
+
+path=$(/bin/bash $tmpfile)
+if [ "$path" != "/d:$tmpdir/c:$tmpdir/../b:a" ]; then
 	echo "Path prepending not working: path = $path"
+	exit 1
 fi
 

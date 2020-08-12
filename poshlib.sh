@@ -46,7 +46,7 @@ if [ "${__posh__stacktrace:-}" == "" ]; then
         USEPATH=$(dirname $(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}"))
         [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: init USEPATH=$USEPATH" >&2
         # Initialize a stacktrace
-        __posh__stacktrace="$(dirname $(readlink "${BASH_SOURCE[1]}" || echo "${BASH_SOURCE[1]}"))"
+        __posh__stacktrace="$(readlink "${BASH_SOURCE[1]}" || echo "${BASH_SOURCE[1]}")"
         [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: init stacktrace=$__posh__stacktrace" >&2
     else
         USEPATH=""
@@ -88,21 +88,20 @@ __posh__descend() {
 
 __posh__prependpath() {
     local pathlist="$1"; shift
-    local path="$1"; shift
+    local newpath="$1"; shift
     # make paths relative to script location, not PWD
     if [ "$__posh__detected__shell" == "bash" ]; then
-        if [ "${path#../}" != "$path" -o "${path#./}" != "$path" ]; then
-            path="${__posh__stacktrace##*:}/${path#./}"
-        elif [ "$path" == ".." ]; then
-            path="${__posh__stacktrace##*:}/.."
-        elif [ "$path" == "." ]; then
-            path="${__posh__stacktrace##*:}"
+        stacktop_dir=$(dirname ${__posh__stacktrace##*:})
+        if [ "$path" == "." ]; then
+            newpath="$stacktop_dir"
+        elif [ "${newpath#/}" == "$newpath" ]; then
+            newpath="$stacktop_dir/${newpath#./}"
         fi
     fi
     if [ -n "$pathlist" ]; then
-        echo -E "$path:$pathlist"
+        echo -E "$newpath:$pathlist"
     else
-        echo -E "$path"
+        echo -E "$newpath"
     fi
 }
 
