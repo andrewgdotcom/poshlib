@@ -19,3 +19,19 @@ $tmpdir/file1 last > $tmpdir/file2
 if ! diff -q "$tmpdir/file1" "$tmpdir/file2" 2>/dev/null; then
     die 1 "flattening not idempotent"
 fi
+
+### test path dependence ###
+
+cp -r $SCRIPT_DIR/.. $tmpdir/poshlib
+cat <<EOF > $tmpdir/command
+#!/bin/bash
+SCRIPT_DIR=\$(dirname "\${BASH_SOURCE[0]}")
+. \$SCRIPT_DIR/poshlib/poshlib.sh || exit 1
+
+use swine
+echo "Success"
+EOF
+/bin/bash $tmpdir/command
+flatten $tmpdir/command > $tmpdir/newcommand
+/bin/bash $tmpdir/newcommand
+
