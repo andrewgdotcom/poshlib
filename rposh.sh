@@ -19,15 +19,16 @@ rscript() { (
     PO_SIMPLE_PARAMS="SUDO_USER SSH_USER SSH_OPTIONS SSH_KEEPALIVE"
     eval $(parse-opt-simple)
 
-    IFS=, read -r -a hosts <<< $1; shift
+    host_list="$1"; shift
     command="$1"; shift
 
     default_keepalive=60
 
-    [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: hosts=(${hosts[*]})"
-
+    # parse host_list into an array
+    # TODO: why doesn't `say $1 | IFS=, read ...` work?
+    IFS=, read -r -a hosts <<< "$host_list"
     # parse RPOSH_SSH_OPTIONS into an array, and intersperse them with "-o" flags
-    say "${RPOSH_SSH_OPTIONS:-}" | read -r -a ssh_key_values
+    IFS=, read -r -a ssh_key_values <<< "${RPOSH_SSH_OPTIONS:-}"
     for option in "${ssh_key_values[@]}"; do
         ssh_options=("${ssh_options[@]}" "-o" "$(printf '%q' "$option")")
     done
@@ -42,8 +43,11 @@ rscript() { (
     flatten "$command" > $tmpdir/command
     chmod +x $tmpdir/command
     [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: ssh_options=(${ssh_options[*]})"
+    [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: hosts=(${hosts[*]})"
 
     for target in "${hosts[@]}"; do
+        # skip empty array elements, these can be created by trailing commas
+        [ -n "$target" ] || continue
         if [ -n "${XDG_RUNTIME_DIR:-}" ]; then
             controldir="${XDG_RUNTIME_DIR}/rposh"
             mkdir -m 0700 -p $controldir
@@ -54,12 +58,12 @@ rscript() { (
 
         if [ ! -e "$controlpath" ]; then
             # start up a controlmaster connection and background it
-            [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: opening control socket $controlpath ..."
+            [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: opening control socket $controlpath"
             ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" \
                 -f "-o" ControlMaster=true -- \
-                "$target" "sleep ${RPOSH_SSH_KEEPALIVE:-$default_keepalive}" &
+                "$target" "sleep ${RPOSH_SSH_KEEPALIVE:-$default_keepalive}" >/dev/null 2>&1 &
         else
-            [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: reusing control socket $controlpath ..."
+            [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: reusing control socket $controlpath"
         fi
 
         remote_tmpdir=$(ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
@@ -69,6 +73,7 @@ rscript() { (
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: remote_command=${pre_command[*]} $remote_tmpdir/command"
         ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
             "$target" "${pre_command[@]}" "$remote_tmpdir/command" $(printf ' %q' "$@")
+        [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: command complete"
 
         if [ -z "${RPOSH_SSH_KEEPALIVE:-}" -o -z "${XDG_RUNTIME_DIR:-}" ]; then
             # shut down controlmaster connection
