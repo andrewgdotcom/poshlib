@@ -16,7 +16,7 @@ rscript() { (
     [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: COMMAND: rscript $*"
 
     PO_SIMPLE_PREFIX="RPOSH_"
-    PO_SIMPLE_PARAMS="SUDO_USER SSH_USER SSH_OPTIONS SSH_KEEPALIVE"
+    PO_SIMPLE_PARAMS="SUDO_USER SSH_USER SSH_OPTIONS SSH_KEEPALIVE STDOUT_DIR STDERR_DIR"
     eval $(parse-opt-simple)
 
     host_list="$1"; shift
@@ -66,13 +66,20 @@ rscript() { (
             [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: reusing control socket $controlpath"
         fi
 
+        # redirect stdout and stderr as required
+        stdout_dev=/proc/self/fd/1
+        stderr_dev=/proc/self/fd/2
+        [[ ! ${RPOSH_STDOUT_DIR:-} ]] || stdout_dev="$RPOSH_STDOUT_DIR/$target.stdout"
+        [[ ! ${RPOSH_STDERR_DIR:-} ]] || stderr_dev="$RPOSH_STDERR_DIR/$target.stderr"
+
         remote_tmpdir=$(ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
             "$target" "mktemp -d" < /dev/null)
         scp -q -p "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
             "$tmpdir/command" "${target}:${remote_tmpdir}/command"
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: remote_command=${pre_command[*]} $remote_tmpdir/command"
         ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
-            "$target" "${pre_command[@]}" "$remote_tmpdir/command" $(printf ' %q' "$@")
+            "$target" "${pre_command[@]}" "$remote_tmpdir/command" $(printf ' %q' "$@") \
+            >> "$stdout_dev" 2>> "$stderr_dev"
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: command complete"
 
         if [ -z "${RPOSH_SSH_KEEPALIVE:-}" -o -z "${XDG_RUNTIME_DIR:-}" ]; then
