@@ -67,10 +67,10 @@ rscript() { (
         fi
 
         # redirect stdout and stderr as required
-        STDOUT_DEV=/proc/self/fd/1
-        STDERR_DEV=/proc/self/fd/2
-        [[ ! ${STDOUT_DIR:-} ]] || STDOUT_DEV="$STDOUT_DIR/$target.stdout"
-        [[ ! ${STDERR_DIR:-} ]] || STDERR_DEV="$STDERR_DIR/$target.stderr"
+        stdout_dev=/proc/self/fd/1
+        stderr_dev=/proc/self/fd/2
+        [[ ! ${RPOSH_STDOUT_DIR:-} ]] || stdout_dev="$RPOSH_STDOUT_DIR/$target.stdout"
+        [[ ! ${RPOSH_STDERR_DIR:-} ]] || stderr_dev="$RPOSH_STDERR_DIR/$target.stderr"
 
         remote_tmpdir=$(ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
             "$target" "mktemp -d" < /dev/null)
@@ -79,7 +79,7 @@ rscript() { (
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: remote_command=${pre_command[*]} $remote_tmpdir/command"
         ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
             "$target" "${pre_command[@]}" "$remote_tmpdir/command" $(printf ' %q' "$@") \
-            >> "$STDOUT_DEV" 2>> "$STDERR_DEV"
+            >> "$stdout_dev" 2>> "$stderr_dev"
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: command complete"
 
         if [ -z "${RPOSH_SSH_KEEPALIVE:-}" -o -z "${XDG_RUNTIME_DIR:-}" ]; then
