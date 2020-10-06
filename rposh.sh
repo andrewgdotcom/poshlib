@@ -69,8 +69,8 @@ rscript() { (
         # redirect stdout and stderr as required
         stdout_dev=/proc/self/fd/1
         stderr_dev=/proc/self/fd/2
-        [[ ! ${RPOSH_STDOUT_DIR:-} ]] || stdout_dev="$RPOSH_STDOUT_DIR/$target.stdout"
-        [[ ! ${RPOSH_STDERR_DIR:-} ]] || stderr_dev="$RPOSH_STDERR_DIR/$target.stderr"
+        [ ! ${RPOSH_STDOUT_DIR:-} ] || stdout_dev="$RPOSH_STDOUT_DIR/$target.stdout"
+        [ ! ${RPOSH_STDERR_DIR:-} ] || stderr_dev="$RPOSH_STDERR_DIR/$target.stderr"
 
         remote_tmpdir=$(ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
             "$target" "mktemp -d" < /dev/null)
