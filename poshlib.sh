@@ -97,7 +97,7 @@ __posh__prependpath() {
     # make paths relative to script location, not PWD
     if [ "$__posh__detected__shell" == "bash" ]; then
         stacktop_dir=$(dirname ${stack%%:*})
-        if [ "$path" == "." ]; then
+        if [ "$newpath" == "." ]; then
             newpath="$stacktop_dir"
         elif [ "${newpath#/}" == "$newpath" ]; then
             newpath="$stacktop_dir/${newpath#./}"
@@ -118,5 +118,5 @@ use() {
 
 use-from() {
     __posh__usepath=$(__posh__prependpath "${__posh__usepath:-}" "$1" "$__posh__callstack")
-    [ -z "${POSH_DEBUG:-}" ] || echo  "# USE FROM $path >> $__posh__flatten__path" >&2
+    [ -z "${POSH_DEBUG:-}" ] || echo  "# USE FROM $1 >> $__posh__flatten__path" >&2
 }
