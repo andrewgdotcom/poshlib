@@ -23,11 +23,12 @@ path=a
 path=\$(__posh__prependpath "\$path" ../b "\$stack")
 path=\$(__posh__prependpath "\$path" ./c "\$stack")
 path=\$(__posh__prependpath "\$path" /d "\$stack")
+path=\$(__posh__prependpath "\$path" . "\$stack")
 echo \$path
 EOF
 
 path=$(/bin/bash $tmpfile)
-if [ "$path" != "/d:$tmpdir/c:$tmpdir/../b:a" ]; then
+if [ "$path" != "$tmpdir:/d:$tmpdir/c:$tmpdir/../b:a" ]; then
 	echo "Path prepending not working: path = $path"
 	exit 1
 fi
