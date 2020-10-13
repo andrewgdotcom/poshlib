@@ -11,7 +11,7 @@ set -o errexit
 set -o pipefail
 set -o nounset
 err_report() {
-    echo "errexit on line $(caller)" >&2
+    echo "errexit $? on line $(caller)" >&2
 }
 trap err_report ERR
 
