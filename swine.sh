@@ -25,7 +25,7 @@ say() {
     if [ "$*" != "" ]; then
         die 102 "Too many arguments to say() at line $(caller)"
     fi
-    echo -E "$text"
+    printf '%s\n' "$text"
 }
 
 # warn() is the same as perl
@@ -35,7 +35,7 @@ warn() {
     if [ "$*" != "" ]; then
         die 102 "Too many arguments to warn() at line $(caller)"
     fi
-    echo -E "$text" >&2
+    printf '%s\n' "$text" >&2
 }
 
 # die() takes two arguments, unlike perl
@@ -47,7 +47,7 @@ die() {
     if [ "$*" != "" ]; then
         die 102 "Too many arguments to die() at line $(caller)"
     fi
-    echo -E "$text" >&2
+    printf '%s\n' "$text" >&2
     exit "$errcode"
 }
 
