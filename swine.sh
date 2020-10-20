@@ -10,10 +10,10 @@
 set -o errexit
 set -o pipefail
 set -o nounset
-err_report() {
+__posh__err_report() {
     echo "errexit $? on line $(caller)" >&2
 }
-trap err_report ERR
+trap __posh__err_report ERR
 
 # The default behaviour of `echo` differs between shells, so we deprecate it.
 # say (from perl6/raku) forces there to be no escape-char handling at runtime.
