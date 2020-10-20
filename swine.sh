@@ -51,6 +51,23 @@ die() {
     exit "$errcode"
 }
 
+# A simple reimplementation of try/catch using one global variable.
+# try danger; if catch err && [[ err == 5 ]]; then ...
+
+__posh__try_last_err=0
+
+try() {
+    __posh__try_last_err=0
+    eval "$*" || __posh__try_last_err=$?
+}
+
+catch() {
+    eval $1=$__posh__try_last_err
+    [ "$__posh__try_last_err" != 0 ]
+}
+
+# Find if the first argument is contained in the rest of the arguments.
+# This is particularly useful for bash pseudo-arrays:
 # if contains "$element" "${array[@]}"; then ...
 
 contains() {
