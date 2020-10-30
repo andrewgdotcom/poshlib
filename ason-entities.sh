@@ -21,15 +21,18 @@ __AS__GS=$'\x1d'
 __AS__RS=$'\x1e'
 __AS__US=$'\x1f'
 
-# The following SHOULD NOT be used at the application plaintext level, but
-# such use is probably harmless. Probably.
+# The following SHOULD NOT appear in ASON plaintext, but can be used as
+# function return values for testing.
 
-__AS__QUOTE=$'\x10\x05' # TC5
-__AS__LIST=$'\x10\x06' # TC6
+_QUOTE=$'\x10\x05'  # TC5
+_LIST=$'\x10\x06'   # TC6
+_DICT=$'\x10\x15'   # TC8
+_TABLE=$'\x10\x16'  # TC9
+_ARRAY=$'\x10\x17'  # TC10
+
+# Reserve this for future use
+
 __AS__SEQ__INIT=$'\x10\x10' # TC7
-__AS__DICT=$'\x10\x15'  # TC8
-__AS__TABLE=$'\x10\x16' # TC9
-__AS__ARRAY=$'\x10\x17' # TC10
 
 # The following MUST NOT be used ever. We define them here so that we can
 # detect them and throw errors.
