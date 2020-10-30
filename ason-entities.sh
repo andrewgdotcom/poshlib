@@ -10,8 +10,6 @@ _PAD=$'\x16'    # SYN
 _PARA=$'\x17'   # ETB
 
 # The following MUST NOT be used at the application plaintext level.
-# Some are reserved for future use and will be given proper names when
-# appropriate.
 
 __AS__SOH=$'\x01'
 __AS__STX=$'\x02'
@@ -23,9 +21,11 @@ __AS__GS=$'\x1d'
 __AS__RS=$'\x1e'
 __AS__US=$'\x1f'
 
-__AS__RESERVED__TC5=$'\x10\x05'
-__AS__RESERVED__TC6=$'\x10\x06'
+# The following SHOULD NOT be used at the application plaintext level, but
+# such use is probably harmless. Probably.
 
+__AS__QUOTE=$'\x10\x05' # TC5
+__AS__LIST=$'\x10\x06' # TC6
 __AS__SEQ__INIT=$'\x10\x10' # TC7
 __AS__DICT=$'\x10\x15'  # TC8
 __AS__TABLE=$'\x10\x16' # TC9
