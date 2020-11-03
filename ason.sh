@@ -6,14 +6,9 @@
 #
 # All functions are call by value, and are pure functions.
 #
-# It is advisable to also source/use the `ason-entities` file, in
-# order to facilitate testing against entity output. 
-#
 # The functions can be divided into constructors, metrics, getters,
 # conversions, and editors. These behave similarly across the different
-# types of structure. All functions other than constructors can take the
-# special value "-" as the first argument, in which case they operate on
-# STDIN instead. 
+# types of structure.
 #
 # Note that all parameters SHOULD be quoted to prevent word-splitting.
 #
@@ -26,72 +21,75 @@
 # magic number.
 # an "item" is either an element or a structure.
 # a "subscript" is a nonzero integer. A negative integer counts backwards
-# from the last item. 
-# a "key" is an element. 
+# from the last item.
+# a "key" is an element.
 # a "slice_def" is a colon-separated pair of (optional) subscripts. A
 # missing first (second) subscript implies "1" ("-1").
 # an "unbounded" slice_def has both subscripts missing
 # a "bounded" slice_def has both subscripts present
 # a "filter" is a comma-separated list of subscripts and slice_defs,
-# or of keys. 
+# or of keys.
 #
 ########################################################################
 
-__ason__is_entity() {
-	
-}
-
-__ason__is_element() {
-	
-}
-
-__ason__is_structure() {
-	
-}
-
-__ason__is_item() {
-	
-}
-
-__ason__is_subscript() {
-	
-}
-
-__ason__is_slice_def() {
-	
-}
-
-__ason__dim_slice_def() {
-	
-}
+use ason/entities
 
 ########################################################################
 #
 # The following constructors are defined:
 #
+#   $(_QUOTE "$string")
 #   $(_LIST "$item1" [...])
 #   $(_DICT "$keys" "$values")
 #   $(_TABLE "$columns" "$values1" [...])
 #
 # If $keys (or $columns) is an element, it is paired with $values in a
 # _DICT of length 1 (or _TABLE of width 1).
-# If $keys ($columns) and $values(N) are _LISTs of equal length n, and the
+# If $keys ($columns) and $valuesN are _LISTs of equal length n, and the
 # items in $keys ($columns) are distinct, then the _LISTs are combined
 # per-item into a _DICT of length n (or _TABLE of width n).
 #
 ########################################################################
 
-_LIST() {
-	
-}
 
-_DICT() {
-	
-}
+_QUOTE() {(
+    use swine
+    use ason/lowlevel
 
-_TABLE() {
-	
-}
+    string="$1"
+    __ason__begin "$_QUOTE"
+    __ason__text
+    __ason__pad "$string"
+    __ason__footer
+)}
+
+_LIST() {(
+    use swine
+    use ason/lowlevel
+
+    __ason__begin "$_LIST"
+    __ason__text
+    item="${1:-}"
+    if shift; then
+        __ason__pad "$item"
+        for item in "$@"; do
+            echo -E -n "$__ASON__US"
+            __ason__pad "$item"
+        done
+    fi
+    __ason__footer
+)}
+
+_DICT() {(
+    use swine
+    die 101 "Not implemented"
+)}
+
+_TABLE() {(
+    use swine
+    die 101 "Not implemented"
+)}
+
 
 ########################################################################
 #
@@ -101,29 +99,34 @@ _TABLE() {
 #   $(_LENGTH "$structure")
 #
 # _TYPE returns an entity that identifies the type of $structure.
-# _LENGTH returns the number of values in a _LIST or _DICT; or the 
+# _LENGTH returns the number of values in a _LIST or _DICT; or the
 # number of rows in a _TABLE.
 #
 # The following metrics are defined only for _TABLEs:
 #
 #   $(_WIDTH "$table")
 #
-# _WIDTH returns the number of columns in a table. It is equivalent to 
+# _WIDTH returns the number of columns in a table. It is equivalent to
 # $(_LENGTH $(_COLUMNS "$table"))
 #
 ########################################################################
 
-_TYPE() {
-	
-}
 
-_LENGTH() {
-	
-}
+_TYPE() {(
+    use swine
 
-_WIDTH() {
-	
-}
+)}
+
+_LENGTH() {(
+    use swine
+
+)}
+
+_WIDTH() {(
+    use swine
+
+)}
+
 
 ########################################################################
 #
@@ -134,31 +137,47 @@ _WIDTH() {
 #   $(_SPLIT "$structure")
 #
 # _GET returns a single value from the structure.
-# If the parent structure is a _LIST, only $subscript is given. 
-# If the parent structure is a _DICT, only $key is given. 
+# If the parent structure is a _LIST, only $subscript is given.
+# If the parent structure is a _DICT, only $key is given.
 # If the parent structure is a _TABLE, both are given in the order
 # row, column ($subscript, $key).
 # If _GET is passed an invalid $subscript or $key, it returns $_UNDEF and a
 # nonzero exit code.
 # _VALUES returns all the values in $structure as a flat _LIST. If
-# $structure is itself a _LIST, it returns its argument unchanged. 
-# _SPLIT returns all the values in $structure as a whitespace-delimited
+# $structure is itself a _LIST, it returns its argument unchanged.
+# _WORDS returns all the values in $structure as a whitespace-delimited
 # list of quoted words suitable for shell word-splitting.
 #
 ########################################################################
 
 
-_GET() {
-	
-}
+_GET() {(
+    use swine
+    structure="$1"
 
-_VALUES() {
-	
-}
+    if [ "$(_TYPE $structure)" != "$_LIST" ]; then
+        die 101 "Not implemented"
+    fi
+)}
 
-_SPLIT() {
-	
-}
+_VALUES() {(
+    use swine
+    structure="$1"
+
+    if [ "$(_TYPE $structure)" != "$_LIST" ]; then
+        die 101 "Not implemented"
+    fi
+    say "$structure"
+)}
+
+_WORDS() {(
+    use swine
+    structure="$1"
+
+    if [ "$(_TYPE $structure)" != "$_LIST" ]; then
+        die 101 "Not implemented"
+    fi
+)}
 
 ########################################################################
 #
@@ -176,7 +195,7 @@ _SPLIT() {
 #
 #   $(_SLICE "$structure" "$slice_def")
 #
-# _SLICE returns a structure of the same type as its argument but smaller 
+# _SLICE returns a structure of the same type as its argument but smaller
 # dimensions.
 # If it is passed an invalid slice_def, it returns an empty structure and
 # a nonzero return code.
@@ -192,28 +211,39 @@ _SPLIT() {
 ########################################################################
 
 
-_KEYS() {
-	
-}
+_KEYS() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
-_COLUMNS() {
-	
-}
+_COLUMNS() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
-_SLICE() {
-	
-}
+_SLICE() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
 _ROW() {
-	
+    use swine
+    die 101 "Not implemented"
 }
 
-_COLUMN() {
-	
-}
+_COLUMN() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
 
 ########################################################################
+#
+# The following conversions are defined for _LISTs:
+#
+#   $(_SPLIT "$separator" "$string")
+#
+# _SPLIT returns a _LIST of strings, where $string is split on $separator.
 #
 # The following conversions are defined for _TABLEs:
 #
@@ -221,19 +251,34 @@ _COLUMN() {
 #   $(_LAMINATE "$list_of_dicts")
 #
 # _FOLIATE returns a _LIST of _DICTs, one for each row.
-# _LAMINATE is its inverse. $list_of_dicts is a _LIST of _DICTs, and 
+# _LAMINATE is its inverse. $list_of_dicts is a _LIST of _DICTs, and
 # each _DICT MUST have the same set of keys.
 #
 ########################################################################
 
 
-_FOLIATE() {
-	
-}
+_SPLIT() {(
+    use swine
 
-_LAMINATE() {
-	
-}
+    separator="$1"; shift
+    string="$1"; shift
+    if [ "$string" = "-" ]; then
+        IFS="$separator" read -r -a words
+    else
+        IFS="$separator" read -r -a words <<< "$string"
+    fi
+    _LIST "${words[@]}"
+)}
+
+_FOLIATE() {(
+    use swine
+    die 101 "Not implemented"
+)}
+
+_LAMINATE() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
 
 ########################################################################
@@ -256,12 +301,12 @@ _LAMINATE() {
 #
 #   $(_CAT "$structure1" [...])
 #
-# _PUSH and _POP operate on the last item (or row) of the structure, while 
+# _PUSH and _POP operate on the last item (or row) of the structure, while
 # _SHIFT and _UNSHIFT operate on the first. If $count is given, that number
-# of items is _POPped or _SHIFTed. 
+# of items is _POPped or _SHIFTed.
 #
 # $new_slice MUST be of the same type as $structure, and the same
-# dimensions as $slice_def. 
+# dimensions as $slice_def.
 # The $structureN arguments to _CAT must be of the same type, and if they
 # are _TABLEs the keys must be identical.
 # If the first argument to _CAT is "-" then one or more structures are read
@@ -290,49 +335,60 @@ _LAMINATE() {
 ########################################################################
 
 
-_SET() {
-	
-}
+_SET() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
-_POP() {
-	
-}
+_POP() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
-_SHIFT() {
-	
-}
+_SHIFT() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
-_PUSH() {
-	
-}
+_PUSH() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
-_UNSHIFT() {
-	
-}
+_UNSHIFT() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
-_PASTE() {
-	
-}
+_PASTE() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
-_CUT() {
-	
-}
+_CUT() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
-_CAT() {
-	
-}
+_CAT() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
-_APPEND() {
-	
-}
+_APPEND() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
-_SETROW() {
-	
-}
+_SETROW() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
-_SETCOLUMN() {
-	
-}
+_SETCOLUMN() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
 
 ########################################################################
@@ -345,10 +401,10 @@ _SETCOLUMN() {
 #   $(_ALTER "$table" (add|drop) "$column" [...])
 #
 # If $columns is an element, then _SELECT returns a _LIST of values.
-# If $columns is a _LIST then _SELECT returns a _TABLE. 
+# If $columns is a _LIST then _SELECT returns a _TABLE.
 # The $columns and $values arguments to _UPDATE must either both be
 # elements, or _LISTs of the same length.
-# 
+#
 # Multipass _TABLE functions:
 #
 #   $(_SORT "$table" by "$condition")
@@ -360,33 +416,39 @@ _SETCOLUMN() {
 ########################################################################
 
 
-_SELECT() {
-	
-}
+_SELECT() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
-_UPDATE() {
-	
-}
+_UPDATE() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
-_DELETE() {
-	
-}
+_DELETE() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
-_ALTER() {
-	
-}
+_ALTER() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
-_SORT() {
-	
-}
+_SORT() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
-_JOIN() {
-	
-}
+_JOIN() {(
+    use swine
+    die 101 "Not implemented"
+)}
 
 
 ########################################################################
-# 
+#
 # _ARRAY (provisional)
 #
 # The following constructors are defined for _ARRAYs:
@@ -396,8 +458,8 @@ _JOIN() {
 #
 # where if the $itemN arguments to _ARRAY are _ARRAYs of rank n, they are
 # laminated into a single _ARRAY of rank n+1, otherwise they are treated
-# as items in an _ARRAY of rank 1. To prevent lamination, use 
-# _ARRAY_OF_ARRAYS instead. 
+# as items in an _ARRAY of rank 1. To prevent lamination, use
+# _ARRAY_OF_ARRAYS instead.
 #
 # The following metrics are defined only for _ARRAYs:
 #
@@ -405,7 +467,7 @@ _JOIN() {
 #   $(_DIM "$array")
 #
 # _RANK returns a positive integer indicating the rank of $array and _DIM
-# returns a _LIST of numbers indicating the dimensions of $array. 
+# returns a _LIST of numbers indicating the dimensions of $array.
 # _RANK is equal to $(_LENGTH $(_DIM "$array"))
 #
 # The following getters are extended to _ARRAYs:
@@ -429,7 +491,7 @@ _JOIN() {
 # recursively applied $(_RANK "$table") times, unless $max_depth is given,
 # in which case the hierarchy ends in a _LIST of _ARRAYs of rank
 # ($(_RANK "$table") - $max_depth). The inverse logic applies to _LAMINATE,
-# except the lamination continues into the first level of _ARRAY items. 
+# except the lamination continues into the first level of _ARRAY items.
 # Each _ARRAY in the last _LIST is laminated into the output _ARRAY, but
 # this does not continue into any _LIST or _ARRAY items therein.
 #
