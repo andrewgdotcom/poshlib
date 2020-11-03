@@ -22,7 +22,8 @@ rscript() { (
     host_list="$1"; shift
     command="$1"; shift
 
-    default_keepalive=60
+    ssh_options=("-o" "ControlPersist=${RPOSH_SSH_KEEPALIVE:-60}" \
+        "-o" "ControlMaster=auto")
 
     # parse host_list into an array
     # TODO: why doesn't `say $1 | IFS=, read ...` work?
@@ -37,7 +38,7 @@ rscript() { (
     fi
     if [ -n "${RPOSH_SUDO_USER:-}" ]; then
         pre_command=("sudo" "-u" "${RPOSH_SUDO_USER}")
-        [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: pre_command=(${ssh_options[*]})"
+        [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: pre_command=(${pre_command[*]})"
     fi
     tmpdir=$(mktemp -d)
     flatten "$command" > $tmpdir/command
@@ -56,14 +57,23 @@ rscript() { (
         fi
         controlpath="${controldir}/${target}"
 
-        if [ ! -e "$controlpath" ]; then
-            # start up a controlmaster connection and background it
+        if
+            [ -f "$controlpath" ] && \
+            ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" \
+                -O check -- "$target" >/dev/null 2>&1 && \
+            timeout 5 \
+                ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" \
+                    -- "$target" "exit 0" >/dev/null 2>&1
+        then
+            [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: reusing control socket $controlpath"
+        else
+            # force kill any stale controlmaster connection
+            ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" \
+                -O exit -- "$target" >/dev/null 2>&1 || true
+            # start up a new controlmaster connection
             [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: opening control socket $controlpath"
             ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" \
-                -f "-o" ControlMaster=true -- \
-                "$target" "sleep ${RPOSH_SSH_KEEPALIVE:-$default_keepalive}" >/dev/null 2>&1 &
-        else
-            [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: reusing control socket $controlpath"
+                -- "$target" "exit 0" >/dev/null 2>&1
         fi
 
         # redirect stdout and stderr as required
@@ -78,13 +88,14 @@ rscript() { (
             "$tmpdir/command" "${target}:${remote_tmpdir}/command"
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: remote_command=${pre_command[*]} $remote_tmpdir/command"
         ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
-            "$target" "${pre_command[@]}" "$remote_tmpdir/command" $(printf ' %q' "$@") \
-            >> "$stdout_dev" 2>> "$stderr_dev"
+            "$target" "${pre_command[@]}" "$remote_tmpdir/command" \
+            $(printf ' %q' "$@") >> "$stdout_dev" 2>> "$stderr_dev"
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: command complete"
 
         if [ -z "${RPOSH_SSH_KEEPALIVE:-}" -o -z "${XDG_RUNTIME_DIR:-}" ]; then
             # shut down controlmaster connection
-            ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -O exit -- "$target" 2> /dev/null
+            ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -O exit -- \
+                "$target" >/dev/null 2>&1
             [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: shut down connection to $target"
         fi
     done
