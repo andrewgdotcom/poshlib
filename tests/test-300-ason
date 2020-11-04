@@ -1,0 +1,24 @@
+#!/bin/bash
+
+SCRIPT_DIR=$(dirname $(readlink -f $0))
+. $SCRIPT_DIR/../poshlib.sh || exit 1
+use swine
+use ason
+use ason/lowlevel
+
+# Low level tests
+
+__ason__is_plaintext_entity "$_PAD" \
+&& __ason__is_type_entity "$_TABLE" \
+&& __ason__is_entity "$_UNDEF" \
+|| die 1 "Entity test failure"
+
+# High level tests
+
+testquote="${__AS__SOH}${_PAD}${__AS__US}${_QUOTE}${__AS__STX}${_PAD}test${_PAD}${__AS__ETX}${__AS__EOD}"
+[[ $(_QUOTE "test") == "$testquote" ]] || die 1 "_QUOTE failure"
+
+testlist="${__AS__SOH}${_PAD}${__AS__US}${_LIST}${__AS__STX}${_PAD}test1${_PAD}${__AS__US}${_PAD}${testquote}${_PAD}${__AS__ETX}${__AS__EOD}"
+[[ $(_LIST "test1" "$testquote") == "$testlist" ]] || die 1 "_LIST failure"
+
+[[ $(_SPLIT , "foo,bar,wibble") == $(_LIST "foo" "bar" "wibble" ) ]] || die 1 "_SPLIT failure"

@@ -12,23 +12,7 @@
 #
 # Note that all parameters SHOULD be quoted to prevent word-splitting.
 #
-# In the following, we define:
-#
-# an "entity" is an ASON control character or escape sequence with special
-# meaning in the plaintext layer.
-# an "element" is an ASON plaintext string, which may include entities.
-# a "structure" is a properly-nested ASON document beginning with the ASON
-# magic number.
-# an "item" is either an element or a structure.
-# a "subscript" is a nonzero integer. A negative integer counts backwards
-# from the last item.
-# a "key" is an element.
-# a "slice_def" is a colon-separated pair of (optional) subscripts. A
-# missing first (second) subscript implies "1" ("-1").
-# an "unbounded" slice_def has both subscripts missing
-# a "bounded" slice_def has both subscripts present
-# a "filter" is a comma-separated list of subscripts and slice_defs,
-# or of keys.
+# See ason/lowlevel for an explanation of terminology.
 #
 ########################################################################
 
@@ -73,7 +57,7 @@ _LIST() {(
     if shift; then
         __ason__pad "$item"
         for item in "$@"; do
-            echo -E -n "$__ASON__US"
+            echo -E -n "$__AS__US"
             __ason__pad "$item"
         done
     fi
@@ -114,6 +98,9 @@ _TABLE() {(
 
 _TYPE() {(
     use swine
+    use ason/lowlevel
+
+    # __ason__is_structure "$1" || die 1 "$_UNDEF"
 
 )}
 
@@ -155,28 +142,39 @@ _GET() {(
     use swine
     structure="$1"
 
-    if [ "$(_TYPE $structure)" != "$_LIST" ]; then
+    case "$(_TYPE $structure)" in
+    * )
         die 101 "Not implemented"
-    fi
+        ;;
+    esac
 )}
 
 _VALUES() {(
     use swine
     structure="$1"
 
-    if [ "$(_TYPE $structure)" != "$_LIST" ]; then
+    case "$(_TYPE $structure)" in
+    "$_QUOTE" )
+        say "$structure"
+        ;;
+    "$_LIST" )
+        say "$structure"
+        ;;
+    * )
         die 101 "Not implemented"
-    fi
-    say "$structure"
+        ;;
+    esac
 )}
 
 _WORDS() {(
     use swine
     structure="$1"
 
-    if [ "$(_TYPE $structure)" != "$_LIST" ]; then
+    case "$(_TYPE $structure)" in
+    * )
         die 101 "Not implemented"
-    fi
+        ;;
+    esac
 )}
 
 ########################################################################
