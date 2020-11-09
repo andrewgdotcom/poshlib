@@ -53,14 +53,7 @@ _LIST() {(
 
     __ason__begin "$_LIST"
     __ason__text
-    item="${1:-}"
-    if shift; then
-        __ason__pad "$item"
-        for item in "$@"; do
-            echo -E -n "$__AS__US"
-            __ason__pad "$item"
-        done
-    fi
+    __ason__join "pad" "$__AS__US" "$@"
     __ason__footer
 )}
 
@@ -100,8 +93,7 @@ _TYPE() {(
     use swine
     use ason/lowlevel
 
-    # __ason__is_structure "$1" || die 1 "$_UNDEF"
-
+    __ason__get_header_value "$1" "$_PAD"
 )}
 
 _LENGTH() {(
@@ -260,11 +252,7 @@ _SPLIT() {(
 
     separator="$1"; shift
     string="$1"; shift
-    if [ "$string" = "-" ]; then
-        IFS="$separator" read -r -a words
-    else
-        IFS="$separator" read -r -a words <<< "$string"
-    fi
+    IFS="$separator" read -r -a words <<< "$string"
     _LIST "${words[@]}"
 )}
 
