@@ -49,23 +49,23 @@ __ason__is_entity() {
 }
 
 __ason__is_element() {
-    header="${1%%${__AS__STX}*}"
-    [ "$header" == "$1" ] || return 1
-    footer="${1##*${__AS__ETX}}"
-    [ "$footer" == "$1" ] || return 1
+    __ason__header="${1%%${__AS__STX}*}"
+    [ "$__ason__header" == "$1" ] || return 1
+    __ason__footer="${1##*${__AS__ETX}}"
+    [ "$__ason__footer" == "$1" ] || return 1
 
     # TODO: check also for structure characters
     return 0
 }
 
 __ason__is_structure() {
-    header="${1%%${__AS__STX}*}"
-    [ "$header" != "$1" ] || return 1
-    footer="${1##*${__AS__ETX}}"
-    [ "$footer" != "$1" ] || return 1
+    __ason__header="${1%%${__AS__STX}*}"
+    [ "$__ason__header" != "$1" ] || return 1
+    __ason__footer="${1##*${__AS__ETX}}"
+    [ "$__ason__footer" != "$1" ] || return 1
 
-    [ "$header#${__AS__SOH}${_PAD}${__AS__US}" != "$header" ] || return 1
-    [ "$footer%${__AS__EOD}" != "$footer" ] || return 1
+    [ "$__ason__header#${__AS__SOH}${_PAD}${__AS__US}" != "$__ason__header" ] || return 1
+    [ "$__ason__footer%${__AS__EOD}" != "$__ason__footer" ] || return 1
 
     # TODO: check also proper nesting
     return 0
@@ -92,22 +92,22 @@ __ason__dim_slice_def() {
 }
 
 __ason__get_header_value() {
-    headers="${1%%${__AS__STX}*}"
-    headers="${headers#${__AS__SOH}*}"
-    if [ "$headers" == "$1" ]; then
+    __ason__header="${1%%${__AS__STX}*}"
+    __ason__header="${__ason__header#${__AS__SOH}*}"
+    if [ "$__ason__header" == "$1" ]; then
         printf "%s" "$_UNDEF"
         return 1
     fi
     while
-        pair="${headers%%${__AS__RS}*}"
-        key="${pair%%${__AS__US}*}"
-        if [ "$key" == "$2" ]; then
-            printf "%s" "${pair#*${__AS__US}}"
+        __ason__pair="${__ason__header%%${__AS__RS}*}"
+        __ason__key="${__ason__pair%%${__AS__US}*}"
+        if [ "$__ason__key" == "$2" ]; then
+            printf "%s" "${__ason__pair#*${__AS__US}}"
             return 0
         fi
-    [ "$pair" != "$headers" ]; do
+    [ "$__ason__pair" != "$__ason__header" ]; do
         # discard the first key/value pair
-        headers="${headers#*${__AS__RS}}"
+        __ason__header="${__ason__header#*${__AS__RS}}"
     done
     printf "%s" "$_UNDEF"
     return 0
@@ -127,14 +127,14 @@ __ason__unpad() {
 }
 
 __ason__join() {
-    pad="$1"; shift
-    separator="$1"; shift
-    item="${1:-}"
+    __ason__pad="$1"; shift
+    __ason__separator="$1"; shift
+    __ason__item="${1:-}"
     if shift; then
-        [ "$pad" != "pad" ] || __ason__pad "$item"
-        for item in "$@"; do
-            printf "%s" "$separator"
-            [ "$pad" != "pad" ] || __ason__pad "$item"
+        [ "$__ason__pad" != "pad" ] || __ason__pad "$__ason__item"
+        for __ason__item in "$@"; do
+            printf "%s" "$__ason__separator"
+            [ "$__ason__pad" != "pad" ] || __ason__pad "$__ason__item"
         done
     fi
 }
@@ -143,7 +143,7 @@ __ason__begin() {
     printf "%s" "$__AS__SOH$_PAD$__AS__US$1"
 }
 
-__ason__addheader() {
+__ason__add_pair() {
     printf "%s" "$__AS__RS${1:-}${__AS__US}${2:-}"
 }
 
