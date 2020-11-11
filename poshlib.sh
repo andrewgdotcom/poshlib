@@ -12,16 +12,20 @@
 if [ "${__posh__callstack:-}" == "" ]; then
     # Shell detector stolen from https://www.av8n.com/computer/shell-dialect-detect
     __posh__detected__shell="$( (
+        # shellcheck disable=SC2034,SC2030
         res1=$(export PATH=/dev/null/$$
           type -p 2>/dev/null)
         st1="$?"
 
+        # shellcheck disable=SC2031
         res2=$(export PATH=/dev/null/$$
           type declare 2>/dev/null)
+        # shellcheck disable=SC2034
         st2="$?"        # not
 
         # this version works without sed, and indeed without a $PATH
         penult='nil'  ult=''
+        # shellcheck disable=SC2116,SC2086
         for word in $(echo $res2) ; do
           penult="$ult"
           ult="$word"
@@ -43,7 +47,7 @@ if [ "${__posh__callstack:-}" == "" ]; then
     # with bashisms. Otherwise, we must invoke `use-from` in the calling script.
     # TODO: support other shells
     if [ "$__posh__detected__shell" == "bash" ]; then
-        __posh__usepath=$(dirname $(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}"))
+        __posh__usepath=$(dirname "$(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}")")
         [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: INIT usepath=$__posh__usepath" >&2
         # Initialize a callstack
         __posh__callstack="$(readlink "${BASH_SOURCE[1]}" || echo "${BASH_SOURCE[1]}")"
@@ -72,7 +76,8 @@ __posh__descend() {
     for dir in ${!path_variable}; do
         if [ -f "$dir/$module.sh" ]; then
             local stack="${!stack_variable}"
-            local safe_module=$(echo "$dir/$module.sh" | tr : _)
+            local safe_module
+            safe_module=$(echo "$dir/$module.sh" | tr : _)
             # prevent loops
             [ "${stack#$safe_module:}" == "$stack" ] || return 0
             [ "${stack#*:$safe_module:}" == "$stack" ] || return 0
@@ -96,7 +101,7 @@ __posh__prependpath() {
     local stack="$1"; shift
     # make paths relative to script location, not PWD
     if [ "$__posh__detected__shell" == "bash" ]; then
-        stacktop_dir=$(dirname ${stack%%:*})
+        stacktop_dir=$(dirname "${stack%%:*}")
         if [ "$newpath" == "." ]; then
             newpath="$stacktop_dir"
         elif [ "${newpath#/}" == "$newpath" ]; then
@@ -118,5 +123,5 @@ use() {
 
 use-from() {
     __posh__usepath=$(__posh__prependpath "${__posh__usepath:-}" "$1" "$__posh__callstack")
-    [ -z "${POSH_DEBUG:-}" ] || echo  "# USE FROM $1 >> $__posh__flatten__path" >&2
+    [ -z "${POSH_DEBUG:-}" ] || echo  "# USE FROM $1 >> $__posh__usepath" >&2
 }
