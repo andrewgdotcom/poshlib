@@ -101,8 +101,8 @@ __ason__get_header_keys() {
         printf "%s" "$_UNDEF"
         return 1
     fi
-    __ason__begin "$_LIST"
-    __ason__text
+    __ason__begin_header "$_LIST"
+    __ason__begin_text
 
     __ason__first=1
     while
@@ -115,7 +115,7 @@ __ason__get_header_keys() {
         __ason__header="${__ason__header#*${__AS__RS}}"
         __ason__first=
     done
-    __ason__footer ""
+    __ason__end
 }
 
 __ason__get_header_value() {
@@ -138,6 +138,23 @@ __ason__get_header_value() {
     done
     printf "%s" "$_UNDEF"
     return 0
+}
+
+__ason__get_stext() {
+    # strip header and closing delimiter, which MUST exist
+    __ason__temp="${1#*$__AS__STX}"
+    [ "$__ason__temp" != "$1" ] || return 1
+    __ason__stext="${__ason__temp%$__AS__EOT}"
+    [ "$__ason__stext" != "$__ason__temp" ] || return 1
+    # remove footer IFF it exists
+    __ason__footer="${__ason__stext##*$__AS__ETX}"
+    if [ "$__ason__footer" != "$__ason__stext" ]; then
+        # make sure we've detected our own footer and not a child's
+        if [ "${__ason__footer%$__AS__EOT*}" = "$__ason__footer" ]; then
+            __ason__stext="${__ason__stext%$__ason__footer}"
+        fi
+    fi
+    printf "%s" "$__ason__stext"
 }
 
 
@@ -166,20 +183,24 @@ __ason__join() {
     fi
 }
 
-__ason__begin() {
+__ason__begin_header() {
     printf "%s" "$__AS__SOH$_PAD$__AS__US$1"
 }
 
-__ason__add_pair() {
+__ason__add_metadata() {
     printf "%s" "$__AS__RS${1:-}${__AS__US}${2:-}"
 }
 
-__ason__text() {
+__ason__begin_text() {
     printf "%s" "$__AS__STX"
 }
 
-__ason__footer() {
-    printf "%s" "$__AS__ETX${1:-}$__AS__EOT"
+__ason__begin_footer() {
+    printf "%s" "$__AS__ETX${1:-}${__AS__US}${2:-}"
+}
+
+__ason__end() {
+    printf "%s" "$__AS__EOT"
 }
 
 
@@ -204,7 +225,7 @@ __ason__to_next() {
         # if __ason__depth < 0, our ASON does not nest properly; abort
         [ "$__ason__depth" -ge 0 ] || return 1
     [ "$__ason__depth" != 0 ]; do
-        # If we're going around again, append a separator
+        # If we're going around again, reattach the separator
         __ason__result="$__ason__result$__ason__separator"
     done
     printf "%s" "$__ason__result"

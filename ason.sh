@@ -41,20 +41,20 @@ _QUOTE() {(
     use ason/lowlevel
 
     string="$1"
-    __ason__begin "$_QUOTE"
-    __ason__text
+    __ason__begin_header "$_QUOTE"
+    __ason__begin_text
     __ason__pad "$string"
-    __ason__footer ""
+    __ason__end
 )}
 
 _LIST() {(
     use swine
     use ason/lowlevel
 
-    __ason__begin "$_LIST"
-    __ason__text
+    __ason__begin_header "$_LIST"
+    __ason__begin_text
     __ason__join "pad" "$__AS__US" "$@"
-    __ason__footer ""
+    __ason__end
 )}
 
 _DICT() {(
@@ -147,11 +147,7 @@ _GET() {(
     case "$type" in
     "$_LIST" )
         subscript="$1"; shift
-
-        # operate on stext only
-        stext="${structure#*$__AS__STX}"
-        stext="${stext%$__AS__ETX*}"
-
+        stext=$(__ason__get_stext "$structure" || die "invalid structure")
         count=0
         item=
         while [ "$count" -lt "$subscript" ] && [ -n "$stext" ]; do
@@ -205,10 +201,7 @@ _READ() {(
 
     case "$type" in
     "$_LIST" )
-        # operate on stext only
-        stext="${structure#*$__AS__STX}"
-        stext="${stext%$__AS__ETX*}"
-
+        stext=$(__ason__get_stext "$structure" || die "invalid structure")
         printf "%s" "$varname=("
         while [ -n "$stext" ]; do
             item=$(__ason__to_next "$__AS__US" "$stext")
