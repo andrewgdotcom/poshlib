@@ -1,3 +1,4 @@
+# shellcheck disable=SC2148
 ################################################################################
 # Declare a main entrypoint to a script. This allows the script to be both used
 # as a module and run directly, by invoking the main entrypoint on evaluation

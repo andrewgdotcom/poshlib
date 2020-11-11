@@ -1,3 +1,4 @@
+# shellcheck disable=SC2148
 ################################################################################
 # Run poshlib code (with optional use dependencies) in a remote context.
 # This replaces e.g. `ansible -m script`, which is incompatible with `use`.
@@ -93,7 +94,7 @@ rscript() { (
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: remote_command=${pre_command[*]} $remote_tmpdir/command"
         ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
             "$target" "${pre_command[@]}" "$remote_tmpdir/command" \
-            $(printf ' %q' "$@") >> "$stdout_dev" 2>> "$stderr_dev"
+            "$(printf ' %q' "$@")" >> "$stdout_dev" 2>> "$stderr_dev"
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: command complete"
 
         if [ -z "${RPOSH_SSH_KEEPALIVE:-}" ] || [ -z "${XDG_RUNTIME_DIR:-}" ]; then

@@ -1,3 +1,4 @@
+# shellcheck disable=SC2148
 ################################################################################
 # Flatten a poshlib script with use dependencies into a static script.
 # Any libs/source files to be flattened MUST be sourced using `use` and not
@@ -21,6 +22,7 @@ flatten() { (
 
     exec <"$script"
     while IFS= read -r input; do
+        # shellcheck disable=SC1117
         if
             path=$(say "$input" | awk '$1=="use-from" {print $2}')
             [ -n "$path" ] && [ -z "$continuation" ]

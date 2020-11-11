@@ -1,3 +1,4 @@
+# shellcheck disable=SC2148
 ################################################################################
 # Initialise poshlib. Define the `use` command and reset settings to default.
 # All other features are optional and can be imported using `use`.

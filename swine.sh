@@ -1,3 +1,4 @@
+# shellcheck disable=SC2148
 ################################################################################
 # Make bash a little bit more like perl. Turn on strict error handling, and
 # implement some of the more useful perl native functions.

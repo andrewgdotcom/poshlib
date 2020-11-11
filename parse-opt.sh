@@ -1,3 +1,4 @@
+# shellcheck disable=SC2148
 ################################################################################
 # Extended getopt handler based on https://stackoverflow.com/a/29754866/1485960
 # This file has no magic number, and is not executable.
