@@ -20,7 +20,6 @@ rscript() { (
     PO_SIMPLE_PREFIX="RPOSH_"
     # shellcheck disable=SC2034
     PO_SIMPLE_PARAMS="SUDO_USER SSH_USER SSH_OPTIONS SSH_KEEPALIVE STDOUT_DIR STDERR_DIR"
-    # shellcheck disable=SC2046
     eval "$(parse-opt-simple)"
 
     host_list="$1"; shift

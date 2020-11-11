@@ -51,8 +51,8 @@ testkeys="${__AS__SOH}${_PAD}${__AS__US}${_LIST}${__AS__STX}${_PAD}${_PAD}${_PAD
 [[ $(_TYPE "${testquote}") == "$_QUOTE" ]] || fail "_TYPE 1"
 [[ $(_TYPE "test") == "$_UNDEF" ]] || fail "_TYPE 2"
 
-[[ $(_LENGTH $(_LIST)) == "0" ]] || fail "_LENGTH 0"
-[[ $(_LENGTH $(_LIST $(_LIST))) == "1" ]] || fail "_LENGTH 1"
+[[ $(_LENGTH "$(_LIST)") == "0" ]] || fail "_LENGTH 0"
+[[ $(_LENGTH "$(_LIST "$(_LIST)")") == "1" ]] || fail "_LENGTH 1"
 [[ $(_LENGTH "$testlist") == "2" ]] || fail "_LENGTH 2"
 
 
@@ -80,7 +80,6 @@ eval "$(_READ list "$(_LIST "$_TRUE")")"
 [[ "${list[*]}" == "$_TRUE" ]] || fail "_READ _TRUE"
 
 testexplode="$(_LIST 1 $'a\nb' "$_TRUE" 4 "a b")"
-# shellcheck disable=SC2046
 eval "$(_READ list "$testexplode")"
 count=0
 for i in "${list[@]}"; do

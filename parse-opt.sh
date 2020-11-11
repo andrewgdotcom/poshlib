@@ -190,8 +190,7 @@ __PO__parse_argv() {
     # return the remaining arguments
     # `set` reloads ARGV; `--` forbids set from consuming options
     # `printf %q` re-quotes the arguments to prevent word-splitting
-    # shellcheck disable=SC2046
-    echo set -- $(printf ' %q' "$@")
+    echo "set -- $(printf ' %q' "$@")"
 }
 
 parse-opt-init() {
