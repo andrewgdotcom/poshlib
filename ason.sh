@@ -44,7 +44,7 @@ _QUOTE() {(
     __ason__begin "$_QUOTE"
     __ason__text
     __ason__pad "$string"
-    __ason__footer
+    __ason__footer ""
 )}
 
 _LIST() {(
@@ -54,7 +54,7 @@ _LIST() {(
     __ason__begin "$_LIST"
     __ason__text
     __ason__join "pad" "$__AS__US" "$@"
-    __ason__footer
+    __ason__footer ""
 )}
 
 _DICT() {(
@@ -98,11 +98,17 @@ _TYPE() {(
 
 _LENGTH() {(
     use swine
+    use ason/lowlevel
+
 
 )}
 
 _WIDTH() {(
     use swine
+    use ason/lowlevel
+
+    [ "$(_TYPE "$1")" == "$_DICT" ] || die 1 "_WIDTH not defined for non-DICTs"
+
 
 )}
 
@@ -113,7 +119,7 @@ _WIDTH() {(
 #
 #   $(_GET "$structure" ["$subscript"] ["$key"])
 #   $(_VALUES "$structure")
-#   $(_SPLIT "$structure")
+#   $(_READ var "$structure")
 #
 # _GET returns a single value from the structure.
 # If the parent structure is a _LIST, only $subscript is given.
@@ -124,17 +130,47 @@ _WIDTH() {(
 # nonzero exit code.
 # _VALUES returns all the values in $structure as a flat _LIST. If
 # $structure is itself a _LIST, it returns its argument unchanged.
-# _WORDS returns all the values in $structure as a whitespace-delimited
-# list of quoted words suitable for shell word-splitting.
+# _READ returns a snippet of shell code suitable for passing to `eval`, which
+# assigns the values of a _LIST to the array `var`
 #
 ########################################################################
 
 
 _GET() {(
     use swine
+    use ason/lowlevel
     structure="$1"
 
-    case "$(_TYPE $structure)" in
+    case "$(_TYPE "$structure")" in
+    "$_LIST" )
+        subscript="$2"
+
+        # operate on stext only
+        structure="${structure#*$__AS__STX}"
+        structure="${structure%$__AS__ETX*}"
+
+        count=0
+        item=
+        while [ "$count" -lt "$subscript" ] && [ -n "$structure" ]; do
+            item="$(__ason__to_next "$__AS__US" "$structure")"
+            structure="${structure#$item}"
+            (( ++count ))
+        done
+        if [ -n "$item" ]; then
+            printf "%s" "$(__ason__unpad "$item")"
+        else
+            printf "%s" "$_UNDEF"
+        fi
+        ;;
+    "$_DICT" )
+        key="$2"
+        die 101 "Not implemented"
+        ;;
+    "$_TABLE" )
+        subscript="$2"
+        key="$3"
+        die 101 "Not implemented"
+        ;;
     * )
         die 101 "Not implemented"
         ;;
@@ -143,12 +179,10 @@ _GET() {(
 
 _VALUES() {(
     use swine
+    use ason/lowlevel
     structure="$1"
 
-    case "$(_TYPE $structure)" in
-    "$_QUOTE" )
-        say "$structure"
-        ;;
+    case "$(_TYPE "$structure")" in
     "$_LIST" )
         say "$structure"
         ;;
@@ -158,11 +192,33 @@ _VALUES() {(
     esac
 )}
 
-_WORDS() {(
+_READ() {(
     use swine
-    structure="$1"
+    use ason/lowlevel
+    varname="$1"; shift
+    structure="$1"; shift
 
-    case "$(_TYPE $structure)" in
+    case "$(_TYPE "$structure")" in
+    "$_LIST" )
+        # operate on stext only
+        structure="${structure#*$__AS__STX}"
+        structure="${structure%$__AS__ETX*}"
+
+        printf "$varname=("
+        while [ -n "$structure" ]; do
+            item=$(__ason__to_next "$__AS__US" "$structure")
+            printf " %q" "$(__ason__unpad "$item")"
+            structure="${structure#$item}"
+            # the following is a no-op after the last item
+            structure="${structure#$__AS__US}"
+        done
+        printf " )"
+        ;;
+    "$_DICT" | "$_TABLE" | "$_ARRAY" )
+        # Call _VALUES to convert to list, and recurse
+        # TODO: This is inefficient, so rewrite at some point
+        _READ "$(_VALUES "$structure")"
+        ;;
     * )
         die 101 "Not implemented"
         ;;

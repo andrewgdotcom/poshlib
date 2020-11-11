@@ -65,22 +65,24 @@ __ason__is_structure() {
     [ "$__ason__footer" != "$1" ] || return 1
 
     [ "$__ason__header#${__AS__SOH}${_PAD}${__AS__US}" != "$__ason__header" ] || return 1
-    [ "$__ason__footer%${__AS__EOD}" != "$__ason__footer" ] || return 1
+    [ "$__ason__footer%${__AS__EOT}" != "$__ason__footer" ] || return 1
 
     # TODO: check also proper nesting
     return 0
 }
 
 __ason__is_item() {
-    __ason__is_structure || __ason__is_element
+    __ason__is_structure "$1" || __ason__is_element "$1"
 }
 
 __ason__is_subscript() {
-    return 1
+    echo "Not implemented"
+    return 101
 }
 
 __ason__is_slice_def() {
-    return 1
+    echo "Not implemented"
+    return 101
 }
 
 
@@ -88,7 +90,32 @@ __ason__is_slice_def() {
 
 __ason__dim_slice_def() {
     # Get the dimensions of a slice_def, so we can test paste compatibility
-    return 1
+    echo "Not implemented"
+    return 101
+}
+
+__ason__get_header_keys() {
+    __ason__header="${1%%${__AS__STX}*}"
+    __ason__header="${__ason__header#${__AS__SOH}*}"
+    if [ "$__ason__header" == "$1" ]; then
+        printf "%s" "$_UNDEF"
+        return 1
+    fi
+    __ason__begin "$_LIST"
+    __ason__text
+
+    __ason__first=1
+    while
+        __ason__pair="${__ason__header%%${__AS__RS}*}"
+        __ason__key="${__ason__pair%%${__AS__US}*}"
+        [ -n "$__ason__first" ] || printf "%s" "$__AS__US"
+        printf "%s" "$(__ason__pad "$__ason__key")"
+    [ "$__ason__pair" != "$__ason__header" ]; do
+        # discard the first key/value pair
+        __ason__header="${__ason__header#*${__AS__RS}}"
+        __ason__first=
+    done
+    __ason__footer ""
 }
 
 __ason__get_header_value() {
@@ -152,5 +179,33 @@ __ason__text() {
 }
 
 __ason__footer() {
-    printf "%s" "$__AS__ETX${1:-}$__AS__EOD"
+    printf "%s" "$__AS__ETX${1:-}$__AS__EOT"
+}
+
+
+# Iterator helpers
+
+__ason__to_next() {
+    __ason__separator="$1"; shift
+    __ason__text="$1"; shift
+
+    __ason__depth=0
+    __ason__result=""
+    while
+        __ason__chunk="${__ason__text%%${__ason__separator}*}"
+        __ason__result="${__ason__result}${__ason__chunk}"
+        __ason__text="${__ason__text#*${__ason__separator}}"
+
+        # find (number of __AS__SOH) minus (number of __AS__EOT) in chunk
+        __ason__opens=$(tr -c -d "$__AS__SOH" <<< "$__ason__chunk" | wc -c)
+        __ason__closes=$(tr -c -d "$__AS__EOT" <<< "$__ason__chunk" | wc -c)
+        (( __ason__depth=__ason__depth+__ason__opens-__ason__closes ))
+
+        # if __ason__depth < 0, our ASON does not nest properly; abort
+        [ "$__ason__depth" -ge 0 ] || return 1
+    [ "$__ason__depth" != 0 ]; do
+        # If we're going around again, append a separator
+        __ason__result="$__ason__result$__ason__separator"
+    done
+    printf "%s" "$__ason__result"
 }
