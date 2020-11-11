@@ -100,16 +100,18 @@ _LENGTH() {(
     use swine
     use ason/lowlevel
 
-
+    die 101 "Not implemented"
 )}
 
 _WIDTH() {(
     use swine
     use ason/lowlevel
+    structure="$1"; shift
+    type="$(_TYPE "$structure")"
 
-    [ "$(_TYPE "$1")" == "$_DICT" ] || die 1 "_WIDTH not defined for non-DICTs"
+    [ "$type" == "$_DICT" ] || die 101 "_WIDTH not defined for non-DICTs"
 
-
+    die 101 "Not implemented"
 )}
 
 
@@ -139,21 +141,22 @@ _WIDTH() {(
 _GET() {(
     use swine
     use ason/lowlevel
-    structure="$1"
+    structure="$1"; shift
+    type="$(_TYPE "$structure")"
 
-    case "$(_TYPE "$structure")" in
+    case "$type" in
     "$_LIST" )
-        subscript="$2"
+        subscript="$1"; shift
 
         # operate on stext only
-        structure="${structure#*$__AS__STX}"
-        structure="${structure%$__AS__ETX*}"
+        stext="${structure#*$__AS__STX}"
+        stext="${stext%$__AS__ETX*}"
 
         count=0
         item=
-        while [ "$count" -lt "$subscript" ] && [ -n "$structure" ]; do
-            item="$(__ason__to_next "$__AS__US" "$structure")"
-            structure="${structure#$item}"
+        while [ "$count" -lt "$subscript" ] && [ -n "$stext" ]; do
+            item="$(__ason__to_next "$__AS__US" "$stext")"
+            stext="${stext#$item}"
             (( ++count ))
         done
         if [ -n "$item" ]; then
@@ -163,13 +166,13 @@ _GET() {(
         fi
         ;;
     "$_DICT" )
-        key="$2"
-        die 101 "Not implemented"
+        key="$1"; shift
+        die 101 "_GET _DICT Not implemented"
         ;;
     "$_TABLE" )
-        subscript="$2"
-        key="$3"
-        die 101 "Not implemented"
+        subscript="$1"; shift
+        key="$1"; shift
+        die 101 "_GET _TABLE Not implemented"
         ;;
     * )
         die 101 "Not implemented"
@@ -180,9 +183,10 @@ _GET() {(
 _VALUES() {(
     use swine
     use ason/lowlevel
-    structure="$1"
+    structure="$1"; shift
+    type="$(_TYPE "$structure")"
 
-    case "$(_TYPE "$structure")" in
+    case "$type" in
     "$_LIST" )
         say "$structure"
         ;;
@@ -197,20 +201,21 @@ _READ() {(
     use ason/lowlevel
     varname="$1"; shift
     structure="$1"; shift
+    type="$(_TYPE "$structure")"
 
-    case "$(_TYPE "$structure")" in
+    case "$type" in
     "$_LIST" )
         # operate on stext only
-        structure="${structure#*$__AS__STX}"
-        structure="${structure%$__AS__ETX*}"
+        stext="${structure#*$__AS__STX}"
+        stext="${stext%$__AS__ETX*}"
 
         printf "%s" "$varname=("
-        while [ -n "$structure" ]; do
-            item=$(__ason__to_next "$__AS__US" "$structure")
+        while [ -n "$stext" ]; do
+            item=$(__ason__to_next "$__AS__US" "$stext")
             printf " %q" "$(__ason__unpad "$item")"
-            structure="${structure#$item}"
+            stext="${stext#$item}"
             # the following is a no-op after the last item
-            structure="${structure#$__AS__US}"
+            stext="${stext#$__AS__US}"
         done
         printf " )"
         ;;
