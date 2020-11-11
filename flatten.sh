@@ -36,8 +36,12 @@ flatten() { (
             __posh__descend flatten "$module"
             say "# FLATTEN: END USE $module"
             [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: FLATTEN: END USE $module"
-        elif [ "${input#.}" != "$input" ] || [ "${input#source}" != "$input" ] &&
-                [ "${input%poshlib.sh *}" != "${input}" ]; then
+        elif ! awk \
+"/^[ \t]*(\.[ \t]|source[ \t]).*\/poshlib.sh([ \t|&\"\')].*)?$/ {exit 1}" \
+                <<< "${input}"; then
+            # Note: awk will exit 0 by default so we "fail" on match and
+            # invert the test above.
+
             # Simulate a fresh usepath and callstack while flattening.
             # WARNING: this may end up using a different version of poshlib.
             # Also, this only works if nobody has done anything nonstandard to
