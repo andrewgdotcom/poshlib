@@ -1,3 +1,4 @@
+# shellcheck disable=SC2148
 # ASON entity definitions
 
 # The following MAY be used at the application plaintext level.

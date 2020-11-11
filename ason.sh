@@ -1,3 +1,4 @@
+# shellcheck disable=SC2148
 ########################################################################
 #
 # Utility functions to manage structured data in ASON serialised format.
@@ -17,6 +18,22 @@
 ########################################################################
 
 use ason/entities
+
+# Utility to convert an entity to human-readable text
+
+_REVEAL() {(
+    use swine
+    string="$1"; shift
+
+    # substitute the longer ones first, to prevent partial matches
+    for entityvar in _QUOTE _LIST _DICT _TABLE _ARRAY \
+            _UNDEF _TRUE _FALSE _PAD _PARA; do
+        # shellcheck disable=SC1117
+        string=$(sed "s/${!entityvar}/\$\{${entityvar}\}/g" <<< "$string")
+    done
+    printf "%s" "$string"
+)}
+
 
 ########################################################################
 #
@@ -182,12 +199,12 @@ _GET() {(
         fi
         ;;
     "$_DICT" )
-        key="$1"; shift
+#        key="$1"; shift
         die 101 "_GET _DICT Not implemented"
         ;;
     "$_TABLE" )
-        subscript="$1"; shift
-        key="$1"; shift
+#        subscript="$1"; shift
+#        key="$1"; shift
         die 101 "_GET _TABLE Not implemented"
         ;;
     * )

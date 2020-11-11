@@ -1,3 +1,4 @@
+# shellcheck disable=SC2148
 ########################################################################
 #
 # Low-level ASON tools. No user-serviceable components inside.

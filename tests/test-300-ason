@@ -22,6 +22,7 @@ __ason__is_type_entity "$_TABLE" || fail __ason__is_type_entity
 __ason__is_entity "$_UNDEF" || fail __ason__is_entity
 
 
+
 # Constructor tests
 
 
@@ -61,6 +62,9 @@ teststext="$testlist${__AS__US}$testquote"
 
 # getter tests
 
+
+[[ $(_REVEAL "${_PAD}${_UNDEF}foo${_QUOTE}${_ARRAY}") == \
+    "\${_PAD}\${_UNDEF}foo\${_QUOTE}\${_ARRAY}" ]] || fail "_REVEAL"
 
 [[ $(_LENGTH "$testlist") == "2" ]] || fail "_LENGTH"
 
