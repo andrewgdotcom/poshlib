@@ -61,15 +61,14 @@ fi
 __posh__descend() {
     local action="$1"; shift
     local module="$1"; shift
-    local dir
+    local dir=
+    local path_variable="__posh__usepath"
+    local stack_variable="__posh__callstack"
     local IFS=:
     if [ "$action" != "." ]; then
         path_variable=__posh__${action}__path
         stack_variable=__posh__${action}__stack
-    elif [ -n "${__posh__usepath:-}" ]; then
-        path_variable="__posh__usepath"
-        stack_variable="__posh__callstack"
-    else
+    elif [ -z "${__posh__usepath:-}" ]; then
         echo "# POSH_ERROR: unexpected descent before init" >&2
         exit 101
     fi
