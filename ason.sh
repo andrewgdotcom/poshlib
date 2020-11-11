@@ -204,7 +204,7 @@ _READ() {(
         structure="${structure#*$__AS__STX}"
         structure="${structure%$__AS__ETX*}"
 
-        printf "$varname=("
+        printf "%s" "$varname=("
         while [ -n "$structure" ]; do
             item=$(__ason__to_next "$__AS__US" "$structure")
             printf " %q" "$(__ason__unpad "$item")"
