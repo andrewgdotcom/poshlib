@@ -25,6 +25,10 @@ _REVEAL() {(
     use swine
     string="$1"; shift
 
+    # First find and substitute any _TC7_TC7 sequences
+    # shellcheck disable=SC1117
+    string=$(sed "s/${__AS__SEQ_INIT}${__AS__SEQ_INIT}[${__AS__SEQ_INIT}${_UNDEF}${_TRUE}${_FALSE}${_PAD}${_PARA}]*/\$\{__UNSUPPORTED_SEQUENCE__\}/g" <<< "$string")
+
     # substitute the longer ones first, to prevent partial matches
     for entityvar in _QUOTE _LIST _DICT _TABLE _ARRAY \
             _UNDEF _TRUE _FALSE _PAD _PARA; do
@@ -144,7 +148,7 @@ _WIDTH() {(
     structure="$1"; shift
     type="$(_TYPE "$structure")"
 
-    [ "$type" == "$_DICT" ] || die 101 "_WIDTH not defined for non-DICTs"
+    [ "$type" = "$_DICT" ] || die 101 "_WIDTH not defined for non-DICTs"
 
     die 101 "Not implemented"
 )}
@@ -156,7 +160,7 @@ _WIDTH() {(
 #
 #   $(_GET "$structure" ["$subscript"] ["$key"])
 #   $(_VALUES "$structure")
-#   $(_READ var "$structure")
+#   eval "$(_READ var "$structure")"
 #
 # _GET returns a single value from the structure.
 # If the parent structure is a _LIST, only $subscript is given.
@@ -168,7 +172,9 @@ _WIDTH() {(
 # _VALUES returns all the values in $structure as a flat _LIST. If
 # $structure is itself a _LIST, it returns its argument unchanged.
 # _READ returns a snippet of shell code suitable for passing to `eval`, which
-# assigns the values of a _LIST to the array `var`
+# assigns the values of a _LIST to the array `var` - it is analogous to
+# `read -a var <<< $input`. This is kludgy, but the only reliable way to
+# selectively word-split a substitution.
 #
 ########################################################################
 

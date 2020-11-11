@@ -33,7 +33,7 @@ _ARRAY=$'\x10\x17'  # DLE_TC10
 
 # Reserve this for future use
 
-__AS__SEQ__INIT=$'\x10\x10' # DLE_TC7
+__AS__SEQ_INIT=$'\x10\x10' # DLE_TC7
 
 # The following MUST NOT be used ever. We define them here so that we can
 # detect them and throw errors.
