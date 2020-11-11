@@ -1,7 +1,8 @@
 #!/bin/bash
 
-SCRIPT_DIR=$(dirname $(readlink -f $0))
-. $SCRIPT_DIR/../poshlib.sh || exit 1
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+# shellcheck disable=SC1090
+. "$SCRIPT_DIR/../poshlib.sh" || exit 1
 use swine
 use ason
 use ason/lowlevel
@@ -9,7 +10,7 @@ use ason/lowlevel
 failure=0
 fail() {
     echo "FAIL: $1"
-    let ++failure
+    (( ++failure ))
 }
 
 
@@ -69,13 +70,15 @@ teststext="$testlist${__AS__US}$testquote"
 [[ $(_GET "$testlist" 3) == "$_UNDEF" ]] || fail "_GET 3"
 
 eval "$(_READ list "$(_LIST "$_TRUE")")"
+# shellcheck disable=SC2154
 [[ "${list[*]}" == "$_TRUE" ]] || fail "_READ _TRUE"
 
 testexplode="$(_LIST 1 $'a\nb' "$_TRUE" 4 "a b")"
+# shellcheck disable=SC2046
 eval $(_READ list "$testexplode")
 count=0
 for i in "${list[@]}"; do
-    let ++count
+    ((++count))
     [[ "$i" == "$count" || "$i" == $'a\nb' || "$i" == "a b" || "$i" == "$_TRUE" ]] || fail "_READ loop $count $i"
 done
 [ "$count" == 5 ] || fail "_READ loop unexpectedly ran $count times"

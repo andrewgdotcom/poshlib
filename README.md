@@ -51,7 +51,7 @@ Source the `poshlib.sh` file at the top of your script. It is often useful to do
 
 ```
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
-. $SCRIPT_DIR/poshlib/poshlib.sh || exit 1
+. "$SCRIPT_DIR/poshlib/poshlib.sh" || exit 1
 ```
 
 You can now enable the individual modules with `use MODULE`. Module names are the filenames without the `.sh` suffix.
@@ -127,4 +127,4 @@ This requires a version of ssh(1) that supports ControlMaster.
 
 ## Notes
 
-* poshlib currently only works with bash, but it is intended to (eventually) also support dash.
+* poshlib currently only works with bash, but it is intended to (eventually) also support dash and ksh.
