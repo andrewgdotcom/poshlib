@@ -54,6 +54,12 @@ SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 . "$SCRIPT_DIR/poshlib/poshlib.sh" || exit 1
 ```
 
+NOTE that some poshlib routines (e.g. rscript) expect the second line above
+to be in a narrowly-defined format, otherwise they will fail to resolve the
+dependencies correctly (this avoids having to reimplement a shell parser).
+Please try not to deviate too far from the example form above, otherwise you
+may get errors of the form "Unexpected descent before init".
+
 You can now enable the individual modules with `use MODULE`. Module names are the filenames without the `.sh` suffix.
 
 You can extend poshlib with your own modules:
@@ -91,14 +97,14 @@ This requires extended getopt(1). All of the functions *must* be invoked using `
 
 The full-featured version is:
 
-* eval $(parse-opt-init)
-* eval $(parse-opt)
+* eval "$(parse-opt-init)"
+* eval "$(parse-opt)"
 
-You must populate the associative arrays PO_SHORT_OPTIONS and PO_LONG_OPTIONS after `eval $(parse-opt-init)` and before `eval $(parse-opt)`. The named variables are initialised with the arguments to their corresponding command line flags. The options are excised from ARGV leaving only positional arguments.
+You must populate the associative arrays PO_SHORT_OPTIONS and PO_LONG_OPTIONS after `eval "$(parse-opt-init)"` and before `eval "$(parse-opt)"`. The named variables are initialised with the arguments to their corresponding command line flags. The options are excised from ARGV leaving only positional arguments.
 
 Alternatively one can use a simplified system, at the cost of flexibility:
 
-* eval $(parse-opt-simple)
+* eval "$(parse-opt-simple)"
 
 This automatically creates the mappings between options and variables, however it is not possible to specify default values or short options using this method.
 
@@ -127,4 +133,4 @@ This requires a version of ssh(1) that supports ControlMaster.
 
 ## Notes
 
-* poshlib currently only works with bash, but it is intended to (eventually) also support dash and ksh.
+* poshlib currently only works with bash, but it is intended to (eventually) also support other POSIX shells.
