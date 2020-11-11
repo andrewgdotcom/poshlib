@@ -75,7 +75,7 @@ eval "$(_READ list "$(_LIST "$_TRUE")")"
 
 testexplode="$(_LIST 1 $'a\nb' "$_TRUE" 4 "a b")"
 # shellcheck disable=SC2046
-eval $(_READ list "$testexplode")
+eval "$(_READ list "$testexplode")"
 count=0
 for i in "${list[@]}"; do
     ((++count))

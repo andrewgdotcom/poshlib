@@ -21,7 +21,7 @@
 # PO_SIMPLE_PARAMS="OUTPUT"
 # PO_SIMPLE_FLAGS="VERBOSE FORCE"
 #
-# eval $(parse-opt-simple)
+# eval "$(parse-opt-simple)"
 # --
 #
 # PO_SIMPLE_PARAMS contains a list of names of with-value long options (minus
@@ -37,7 +37,7 @@
 #
 # --
 # use parse-opt
-# eval $(parse-opt-init)
+# eval "$(parse-opt-init)"
 #
 # PO_SHORT_MAP["d::"]="DEBUG=1"
 # PO_SHORT_MAP["v"]="VERBOSE"
@@ -47,7 +47,7 @@
 # PO_LONG_MAP["comment::"]="COMMENT=no comment"
 # PO_LONG_MAP["verbose"]="VERBOSE"
 #
-# eval $(parse-opt)
+# eval "$(parse-opt)"
 # --
 #
 # A single colon in the key indicates that the command-line option requires a
@@ -199,9 +199,9 @@ parse-opt-init() {
 
 parse-opt() {
     # shellcheck disable=SC2016
-    echo 'eval $(__PO__canonicalize_argv "$@");'
+    echo 'eval "$(__PO__canonicalize_argv "$@")";'
     # shellcheck disable=SC2016
-    echo 'eval $(__PO__parse_argv "$@");'
+    echo 'eval "$(__PO__parse_argv "$@")";'
 }
 
 parse-opt-simple() {

@@ -1,10 +1,11 @@
 #!/bin/bash
-. $(dirname "${BASH_SOURCE[0]}")/../poshlib.sh || exit 1
+# shellcheck disable=SC1090
+. "$(dirname "${BASH_SOURCE[0]}")/../poshlib.sh" || exit 1
 use swine
 use rposh
 
 if [ "${1:-}" == "" ]; then
-result=$(rscript ,localhost,, --ssh-user=$USER --sudo-user=$USER "${BASH_SOURCE[0]}" "last" "test")
+result=$(rscript ,localhost,, --ssh-user="$USER" --sudo-user="$USER" "${BASH_SOURCE[0]}" "last" "test")
     if [ "$result" != last ]; then
 	die 1 "Received unexpected output: $result"
     fi
