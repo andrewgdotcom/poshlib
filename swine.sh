@@ -62,7 +62,7 @@ try() {
 }
 
 catch() {
-    eval $1=$__posh__try_last_err
+    eval "$1"="$__posh__try_last_err"
     [ "$__posh__try_last_err" != 0 ]
 }
 
