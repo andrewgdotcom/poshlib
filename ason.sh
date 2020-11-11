@@ -99,8 +99,26 @@ _TYPE() {(
 _LENGTH() {(
     use swine
     use ason/lowlevel
+    structure="$1"; shift
+    type="$(_TYPE "$structure")"
 
-    die 101 "Not implemented"
+    case "$type" in
+    "$_LIST" )
+        stext=$(__ason__get_stext "$structure" || die "invalid structure")
+        count=0
+        item=
+        while [ -n "$stext" ]; do
+            item="$(__ason__to_next "$__AS__US" "$stext")"
+            stext="${stext#$item}"
+            stext="${stext#$__AS__US}"
+            (( ++count ))
+        done
+        printf "%s" "$count"
+        ;;
+    * )
+        die 101 "Not implemented"
+        ;;
+    esac
 )}
 
 _WIDTH() {(
@@ -152,10 +170,12 @@ _GET() {(
         item=
         while [ "$count" -lt "$subscript" ] && [ -n "$stext" ]; do
             item="$(__ason__to_next "$__AS__US" "$stext")"
+            # remove the found item and any subsequent separator
             stext="${stext#$item}"
+            stext="${stext#$__AS__US}"
             (( ++count ))
         done
-        if [ -n "$item" ]; then
+        if [ -n "$item" ] && [ "$count" = "$subscript" ]; then
             printf "%s" "$(__ason__unpad "$item")"
         else
             printf "%s" "$_UNDEF"

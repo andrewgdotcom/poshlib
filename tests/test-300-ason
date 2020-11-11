@@ -60,9 +60,13 @@ teststext="$testlist${__AS__US}$testquote"
 
 # getter tests
 
+
+[[ $(_LENGTH "$testlist") == "2" ]] || fail "_LENGTH"
+
+[[ $(_GET "$testlist" 0) == "$_UNDEF" ]] || fail "_GET 0"
 [[ $(_GET "$testlist" 1) == "test 1" ]] || fail "_GET 1"
-[[ $(_GET "$testlist" 3) == "$_UNDEF" ]] || fail "_GET 2"
-[[ $(_GET "$testlist" 0) == "$_UNDEF" ]] || fail "_GET 3"
+[[ $(_GET "$testlist" 2) == "$testquote" ]] || fail "_GET 2"
+[[ $(_GET "$testlist" 3) == "$_UNDEF" ]] || fail "_GET 3"
 
 eval "$(_READ list "$(_LIST "$_TRUE")")"
 [[ "${list[*]}" == "$_TRUE" ]] || fail "_READ _TRUE"
