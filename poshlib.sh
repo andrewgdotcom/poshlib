@@ -68,7 +68,8 @@ __posh__descend() {
     if [ "$action" != "." ]; then
         path_variable=__posh__${action}__path
         stack_variable=__posh__${action}__stack
-    elif [ -z "${__posh__usepath:-}" ]; then
+    fi
+    if [ -z "${!path_variable:-}" ]; then
         echo "# POSH_ERROR: unexpected descent before init" >&2
         exit 101
     fi
