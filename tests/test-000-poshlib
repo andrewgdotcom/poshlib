@@ -1,22 +1,24 @@
 #!/bin/bash
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
-. $SCRIPT_DIR/../poshlib.sh || exit 1
+# shellcheck disable=SC1090
+. "$SCRIPT_DIR/../poshlib.sh" || exit 1
 
 ### detect_shell ###
 
-if [ "$__posh__detected__shell" != "bash" ]; then
-	echo "Shell not detected, expected 'bash' got '$output'"
+# shellcheck disable=SC2154
+if [ "${__posh__detected__shell:-}" != "bash" ]; then
+	echo "Shell not detected, expected 'bash' got '${__posh__detected__shell:-}'"
 	exit 1
 fi
 
 ### prependpath ###
 
 tmpfile=$(mktemp)
-tmpdir=$(dirname $tmpfile)
+tmpdir=$(dirname "$tmpfile")
 
-cat <<EOF >$tmpfile
+cat <<EOF >"$tmpfile"
 #!/bin/bash
-. $SCRIPT_DIR/../poshlib.sh || exit 1
+. "$SCRIPT_DIR/../poshlib.sh" || exit 1
 stack="\${BASH_SOURCE[0]}"
 
 path=a
@@ -27,9 +29,8 @@ path=\$(__posh__prependpath "\$path" . "\$stack")
 echo \$path
 EOF
 
-path=$(/bin/bash $tmpfile)
+path=$(/bin/bash "$tmpfile")
 if [ "$path" != "$tmpdir:/d:$tmpdir/c:$tmpdir/../b:a" ]; then
 	echo "Path prepending not working: path = $path"
 	exit 1
 fi
-
