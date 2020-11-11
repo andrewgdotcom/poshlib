@@ -23,25 +23,26 @@ flatten() { (
     while IFS= read -r input; do
         if
             path=$(say "$input" | awk '$1=="use-from" {print $2}')
-            [ -n "$path" -a -z "$continuation" ]
+            [ -n "$path" ] && [ -z "$continuation" ]
         then
             __posh__flatten__path=$(__posh__prependpath "$__posh__flatten__path" "$path" "$__posh__flatten__stack")
             say "# FLATTEN: USE FROM $path >> $__posh__flatten__path"
         elif
             module=$(say "$input" | awk '$1=="use" {print $2}')
-            [ -n "$module" -a -z "$continuation" ]
+            [ -n "$module" ] && [ -z "$continuation" ]
         then
             say "# FLATTEN: USE $module"
             [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: FLATTEN: USE $module"
             __posh__descend flatten "$module"
             say "# FLATTEN: END USE $module"
             [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: FLATTEN: END USE $module"
-        elif [ "${input#.}" != "$input" -o "${input#source}" != "$input" ] &&
+        elif [ "${input#.}" != "$input" ] || [ "${input#source}" != "$input" ] &&
                 [ "${input%poshlib.sh *}" != "${input}" ]; then
             # Simulate a fresh usepath and callstack while flattening.
             # WARNING: this may end up using a different version of poshlib.
             # Also, this only works if nobody has done anything nonstandard to
             # __posh__usepath since we initialised it.
+            # shellcheck disable=SC2154
             __posh__flatten__path="${__posh__usepath##*:}"
             __posh__flatten__stack="${script}"
             say "# FLATTEN: INIT usepath=$__posh__flatten__path"
