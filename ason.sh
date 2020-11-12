@@ -11,23 +11,28 @@
 # conversions, and editors. These behave similarly across the different
 # types of structure.
 #
-# Note that all parameters SHOULD be quoted to prevent word-splitting.
+# Note that all parameters and substitutions SHOULD be quoted to prevent
+# word-splitting.
 #
-# See ason/lowlevel for an explanation of terminology.
+# See ason/lowlevel for a fuller explanation of terminology.
 #
 ########################################################################
 
 use ason/entities
 
-# _REVEAL substitutes nonprintable characters with shell expansions
+########################################################################
+#
+# _REVEAL substitutes ASON entities with their shell expansions
+#
+########################################################################
 
 _REVEAL() {(
     use swine
     string="$1"; shift
 
-    # First substitute any structure
+    # First substitute structure characters
     for entityvar in __AS__SOH __AS__STX __AS__ETX __AS__EOT \
-                        __AS__FS __AS__GS __AS__RS __AS__US; do
+            __AS__FS __AS__GS __AS__RS __AS__US; do
         # shellcheck disable=SC1117
         string=$(sed "s/${!entityvar}/\$\{${entityvar}\}/g" <<< "$string")
     done
@@ -57,6 +62,7 @@ _REVEAL() {(
 #
 # If $keys (or $columns) is an element, it is paired with $values in a
 # _DICT of length 1 (or _TABLE of width 1).
+#
 # If $keys ($columns) and $valuesN are _LISTs of equal length n, and the
 # items in $keys ($columns) are distinct, then the _LISTs are combined
 # per-item into a _DICT of length n (or _TABLE of width n).
@@ -104,6 +110,7 @@ _TABLE() {(
 #   $(_LENGTH "$structure")
 #
 # _TYPE returns an entity that identifies the type of $structure.
+#
 # _LENGTH returns the number of values in a _LIST or _DICT; or the
 # number of rows in a _TABLE.
 #
@@ -112,7 +119,7 @@ _TABLE() {(
 #   $(_WIDTH "$table")
 #
 # _WIDTH returns the number of columns in a table. It is equivalent to
-# $(_LENGTH $(_COLUMNS "$table"))
+# $(_LENGTH "$(_COLUMNS "$table")")
 #
 ########################################################################
 
@@ -131,14 +138,16 @@ _LENGTH() {(
     type="$(_TYPE "$structure")"
 
     case "$type" in
-    "$_LIST" )
+    "$_LIST" | "$_DICT" )
+        separator="$__AS__US"
+        [[ "$type" == "$_LIST" ]] || separator="$__AS__RS"
         stext=$(__ason__get_stext "$structure" || die "invalid structure")
         count=0
         item=
         while [ -n "$stext" ]; do
-            item="$(__ason__to_next "$__AS__US" "$stext")"
+            item="$(__ason__to_next "$separator" "$stext")"
             stext="${stext#$item}"
-            stext="${stext#$__AS__US}"
+            stext="${stext#$separator}"
             (( ++count ))
         done
         printf "%s" "$count"
@@ -155,7 +164,7 @@ _WIDTH() {(
     structure="$1"; shift
     type="$(_TYPE "$structure")"
 
-    [ "$type" = "$_DICT" ] || die 101 "_WIDTH not defined for non-DICTs"
+    [ "$type" = "$_TABLE" ] || die 101 "_WIDTH only defined for _TABLEs"
 
     die 101 "Not implemented"
 )}
@@ -176,12 +185,14 @@ _WIDTH() {(
 # row, column ($subscript, $key).
 # If _GET is passed an invalid $subscript or $key, it returns $_UNDEF and a
 # nonzero exit code.
+#
 # _VALUES returns all the values in $structure as a flat _LIST. If
 # $structure is itself a _LIST, it returns its argument unchanged.
+#
 # _READ returns a snippet of shell code suitable for passing to `eval`, which
-# assigns the values of a _LIST to the array `var` - it is analogous to
-# `read -a var <<< $input`. This is kludgy, but the only reliable way to
-# selectively word-split a substitution.
+# assigns the values of a _LIST to the array `var`; it is analogous to
+# `read -a var <<< "$input"`. This is kludgy, but the only reliable way to
+# *selectively* word-split a substitution.
 #
 ########################################################################
 
@@ -377,7 +388,7 @@ _LAMINATE() {(
 #
 #   $(_SET "$structure" ["$subscript"] ["$key"] = "$item")
 #
-# Note that the "=" is syntactic sugar but is required to minimise errors.
+# Note that the "=" is syntactic sugar but is included to trap errors.
 #
 # The following editors are defined for _LISTs and _TABLEs:
 #
@@ -397,10 +408,10 @@ _LAMINATE() {(
 #
 # $new_slice MUST be of the same type as $structure, and the same
 # dimensions as $slice_def.
+#
 # The $structureN arguments to _CAT must be of the same type, and if they
 # are _TABLEs the keys must be identical.
-# If the first argument to _CAT is "-" then one or more structures are read
-# from STDIN and any further arguments are appended to them.
+# _CAT does not merge headers; the headers of the first argument are used
 #
 # The following editors are defined for _DICTs:
 #
@@ -410,10 +421,10 @@ _LAMINATE() {(
 #
 # The following editors are defined for _TABLEs:
 #
-#   $(_SETROW "$table" "$subscript" = "$dict")
+#   $(_SETROW "$table" "$subscript" = "$list")
 #   $(_SETCOLUMN "$table" "$column" = "$list")
 #
-# _SETROW takes a _DICT as its rvalue, while _PASTE takes a _TABLE.
+# _SETROW takes a _LIST as its rvalue, while _PASTE takes a _TABLE.
 #
 # Editors always return a structure of the same type as the first argument.
 # If any editor removes the last item in a structure, it successfully
