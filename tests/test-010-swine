@@ -4,8 +4,7 @@
 use swine
 
 # say
-# shellcheck disable=SC1117
-test="Hello \n this should not be line broken"
+test="Hello \\n this should not be line broken"
 if [ "$test" != "$(say "$test")" ]; then
     die 1 "failure in say"
 fi

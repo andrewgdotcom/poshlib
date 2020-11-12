@@ -31,7 +31,8 @@ __ason__is_entity "$_UNDEF" || fail __ason__is_entity
     || fail "__ason__unpad 1"
 [[ "$(__ason__unpad "   $_PAD foo bar $_PAD   ")" == " foo bar " ]] \
     || fail "__ason__unpad 2"
-
+[[ "$(__ason__unpad $'    foo bar \t ')" == "foo bar" ]] \
+    || fail "__ason__unpad 3"
 
 testquote="${__AS__SOH}${_PAD}${__AS__US}${_QUOTE}${__AS__STX}${_PAD}test${_PAD}${__AS__EOT}"
 [[ $(_QUOTE "test") == "$testquote" ]] \

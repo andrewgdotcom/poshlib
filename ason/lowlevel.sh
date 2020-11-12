@@ -166,9 +166,7 @@ __ason__pad() {
 }
 
 __ason__unpad() {
-    printf "%s" "$1" \
-        | sed 's/^[ \t]*//;s/[ \t]*$//' \
-        | sed "s/^$_PAD*//;s/$_PAD*$//"
+    printf "%s" "$1" | sed "s/^[ \\t]*//; s/^$_PAD//; s/[ \\t]*$//; s/$_PAD$//"
 }
 
 __ason__join() {
@@ -206,6 +204,15 @@ __ason__end() {
 
 
 # Iterator helpers
+
+# __ason__to_next finds the next NON-NESTED appearance of $separator in
+# $text and returns all the text leading up to it, EXCLUDING the separator.
+# If there is no next separator, then it returns the entire text.
+#
+# NOTE that $text is NOT a whole structure; just the htext, stext, or ftext.
+#
+# To truncate the text, the calling routine should invoke ${text#$result} AND
+# THEN ${text#$separator}, because the separator *may or may not* exist.
 
 __ason__to_next() {
     __ason__separator="$1"; shift

@@ -33,19 +33,16 @@ _REVEAL() {(
     # First substitute structure characters
     for entityvar in __AS__SOH __AS__STX __AS__ETX __AS__EOT \
             __AS__FS __AS__GS __AS__RS __AS__US; do
-        # shellcheck disable=SC1117
-        string=$(sed "s/${!entityvar}/\$\{${entityvar}\}/g" <<< "$string")
+        string=$(sed "s/${!entityvar}/\\$\\{${entityvar}\\}/g" <<< "$string")
     done
 
     # Now find and substitute any _TC7_TC7 sequences
-    # shellcheck disable=SC1117
-    string=$(sed "s/${__AS__SEQ_INIT}${__AS__SEQ_INIT}[${__AS__SEQ_INIT}${_UNDEF}${_TRUE}${_FALSE}${_PAD}${_PARA}]*/\$\{__UNSUPPORTED_SEQUENCE__\}/g" <<< "$string")
+    string=$(sed "s/${__AS__SEQ_INIT}${__AS__SEQ_INIT}[${__AS__SEQ_INIT}${_UNDEF}${_TRUE}${_FALSE}${_PAD}${_PARA}]*/\\$\\{__UNSUPPORTED_SEQUENCE__\\}/g" <<< "$string")
 
     # substitute the longer entities first, to prevent partial matches
     for entityvar in _QUOTE _LIST _DICT _TABLE _ARRAY \
             _UNDEF _TRUE _FALSE _PAD _PARA; do
-        # shellcheck disable=SC1117
-        string=$(sed "s/${!entityvar}/\$\{${entityvar}\}/g" <<< "$string")
+        string=$(sed "s/${!entityvar}/\\$\\{${entityvar}\\}/g" <<< "$string")
     done
     printf "%s" "$string"
 )}

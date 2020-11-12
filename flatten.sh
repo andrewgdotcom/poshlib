@@ -22,7 +22,6 @@ flatten() { (
 
     exec <"$script"
     while IFS= read -r input; do
-        # shellcheck disable=SC1117
         if
             path=$(say "$input" | awk '$1=="use-from" {print $2}')
             [ -n "$path" ] && [ -z "$continuation" ]
@@ -39,8 +38,10 @@ flatten() { (
             say "# FLATTEN: END USE $module"
             [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: FLATTEN: END USE $module"
         elif ! awk \
-"/^[ \t]*(\.[ \t]|source[ \t]).*\/poshlib.sh([ \t|&\"\')].*)?$/ {exit 1}" \
+"/^[ \\t]*(\\.[ \\t]|source[ \\t]).*\\/poshlib.sh([ \\t|&\"')].*)?$/ {exit 1}" \
                 <<< "${input}"; then
+            # BEWARE: the above is double-quoted so we can use a single-quote
+            # in the regex.
             # Note: awk will exit 0 by default so we "fail" on match and
             # invert the test above.
 
