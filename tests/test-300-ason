@@ -65,10 +65,12 @@ teststext="$testlist${__AS__US}$testquote"
 
 # getter tests
 
-[[ $(_REVEAL "${_PAD}${_UNDEF}foo${_QUOTE}${_ARRAY}") == \
-    "\${_PAD}\${_UNDEF}foo\${_QUOTE}\${_ARRAY}" ]] || fail "_REVEAL 1"
-[[ $(_REVEAL "${__AS__SEQ_INIT}${__AS__SEQ_INIT}${_PAD}${_UNDEF}foo") == \
-    "\${__UNSUPPORTED_SEQUENCE__}foo" ]] || fail "_REVEAL 2"
+[[ $(_REVEAL "${_PAD}${_ARRAY}foo${_QUOTE}${_UNDEF}") == \
+    "\${_PAD}\${_ARRAY}foo\${_QUOTE}\${_UNDEF}" ]] || fail "_REVEAL 1"
+[[ $(_REVEAL "${__AS__SEQ_INIT}${__AS__SEQ_INIT}${_PAD}${_ARRAY}foo${_QUOTE}${_UNDEF}") == \
+    "\${__UNSUPPORTED_SEQUENCE__}foo\${_QUOTE}\${_UNDEF}" ]] || fail "_REVEAL 2"
+[[ $(_REVEAL "$testquote") == \
+    "\${__AS__SOH}\${_PAD}\${__AS__US}\${_QUOTE}\${__AS__STX}\${_PAD}test\${_PAD}\${__AS__EOT}" ]] || fail "_REVEAL 3"
 
 [[ $(_GET "$testlist" 0) == "$_UNDEF" ]] || fail "_GET 0"
 [[ $(_GET "$testlist" 1) == "test 1" ]] || fail "_GET 1"

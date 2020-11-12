@@ -19,17 +19,24 @@
 
 use ason/entities
 
-# Utility to convert an entity to human-readable text
+# _REVEAL substitutes nonprintable characters with shell expansions
 
 _REVEAL() {(
     use swine
     string="$1"; shift
 
-    # First find and substitute any _TC7_TC7 sequences
+    # First substitute any structure
+    for entityvar in __AS__SOH __AS__STX __AS__ETX __AS__EOT \
+                        __AS__FS __AS__GS __AS__RS __AS__US; do
+        # shellcheck disable=SC1117
+        string=$(sed "s/${!entityvar}/\$\{${entityvar}\}/g" <<< "$string")
+    done
+
+    # Now find and substitute any _TC7_TC7 sequences
     # shellcheck disable=SC1117
     string=$(sed "s/${__AS__SEQ_INIT}${__AS__SEQ_INIT}[${__AS__SEQ_INIT}${_UNDEF}${_TRUE}${_FALSE}${_PAD}${_PARA}]*/\$\{__UNSUPPORTED_SEQUENCE__\}/g" <<< "$string")
 
-    # substitute the longer ones first, to prevent partial matches
+    # substitute the longer entities first, to prevent partial matches
     for entityvar in _QUOTE _LIST _DICT _TABLE _ARRAY \
             _UNDEF _TRUE _FALSE _PAD _PARA; do
         # shellcheck disable=SC1117
