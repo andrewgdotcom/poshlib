@@ -13,6 +13,7 @@ fail() {
     (( ++failure ))
 }
 
+
 # lowlevel test tests
 
 
@@ -21,56 +22,74 @@ __ason__is_type_entity "$_TABLE" || fail __ason__is_type_entity
 __ason__is_entity "$_UNDEF" || fail __ason__is_entity
 
 
-
 # Constructor tests
 
 
-[ "$(__ason__pad "  " )" = "$_PAD  $_PAD" ] || fail "__ason__pad"
-[ "$(__ason__unpad "$(__ason__pad '  ')")" = "  " ] || fail "__ason__unpad 1"
-[ "$(__ason__unpad "   $_PAD foo bar $_PAD   ")" = " foo bar " ] || fail "__ason__unpad 2"
+[[ "$(__ason__pad "  " )" == "$_PAD  $_PAD" ]] \
+    || fail "__ason__pad"
+[[ "$(__ason__unpad "$(__ason__pad '  ')")" == "  " ]] \
+    || fail "__ason__unpad 1"
+[[ "$(__ason__unpad "   $_PAD foo bar $_PAD   ")" == " foo bar " ]] \
+    || fail "__ason__unpad 2"
 
 
 testquote="${__AS__SOH}${_PAD}${__AS__US}${_QUOTE}${__AS__STX}${_PAD}test${_PAD}${__AS__EOT}"
-[[ $(_QUOTE "test") == "$testquote" ]] || fail _QUOTE
+[[ $(_QUOTE "test") == "$testquote" ]] \
+    || fail _QUOTE
 
 testlist="${__AS__SOH}${_PAD}${__AS__US}${_LIST}${__AS__STX}${_PAD}test 1${_PAD}${__AS__US}${_PAD}${testquote}${_PAD}${__AS__EOT}"
-[[ $(_LIST "test 1" "$testquote") == "$testlist" ]] || fail _LIST
+[[ $(_LIST "test 1" "$testquote") == "$testlist" ]] \
+    || fail _LIST
 
-[[ $(_SPLIT , "foo,bar,wibble") == $(_LIST "foo" "bar" "wibble" ) ]] || fail _SPLIT
+[[ $(_SPLIT , "foo,bar,wibble") == $(_LIST "foo" "bar" "wibble" ) ]] \
+    || fail _SPLIT
 
 
 # Metadata tests
 
 
 testkeys="${__AS__SOH}${_PAD}${__AS__US}${_LIST}${__AS__STX}${_PAD}${_PAD}${_PAD}${__AS__EOT}"
-[[ $(__ason__get_header_keys "${testquote}") == "$testkeys" ]] || fail __ason__get_header_keys
+[[ $(__ason__get_header_keys "${testquote}") == "$testkeys" ]] \
+    || fail __ason__get_header_keys
 
-[[ $(__ason__get_header_value "${testquote}" "${_PAD}") == "$_QUOTE" ]] || fail __ason__get_header_value
+[[ $(__ason__get_header_value "${testquote}" "${_PAD}") == "$_QUOTE" ]] \
+    || fail __ason__get_header_value
 
-[[ $(_TYPE "${testquote}") == "$_QUOTE" ]] || fail "_TYPE 1"
-[[ $(_TYPE "test") == "$_UNDEF" ]] || fail "_TYPE 2"
+[[ $(_TYPE "${testquote}") == "$_QUOTE" ]] \
+    || fail "_TYPE 1"
+[[ $(_TYPE "test") == "$_UNDEF" ]] \
+    || fail "_TYPE 2"
 
-[[ $(_LENGTH "$(_LIST)") == "0" ]] || fail "_LENGTH 0"
-[[ $(_LENGTH "$(_LIST "$(_LIST)")") == "1" ]] || fail "_LENGTH 1"
-[[ $(_LENGTH "$testlist") == "2" ]] || fail "_LENGTH 2"
+[[ $(_LENGTH "$(_LIST)") == "0" ]] \
+    || fail "_LENGTH 0"
+[[ $(_LENGTH "$(_LIST "$(_LIST)")") == "1" ]] \
+    || fail "_LENGTH 1"
+[[ $(_LENGTH "$testlist") == "2" ]] \
+    || fail "_LENGTH 2"
 
 
 # lowlevel iterator tests
 
 
 teststext="$testlist${__AS__US}$testquote"
-[[ $(__ason__to_next "$__AS__US" "$testlist") == "$testlist" ]] || fail "__ason__to_next 1"
-[[ $(__ason__to_next "$__AS__US" "$teststext") == "$testlist" ]] || fail "__ason__to_next 2"
+[[ $(__ason__to_next "$__AS__US" "$testlist") == "$testlist" ]] \
+    || fail "__ason__to_next 1"
+[[ $(__ason__to_next "$__AS__US" "$teststext") == "$testlist" ]] \
+    || fail "__ason__to_next 2"
 
 
 # getter tests
 
+
 [[ $(_REVEAL "${_PAD}${_ARRAY}foo${_QUOTE}${_UNDEF}") == \
-    "\${_PAD}\${_ARRAY}foo\${_QUOTE}\${_UNDEF}" ]] || fail "_REVEAL 1"
+    "\${_PAD}\${_ARRAY}foo\${_QUOTE}\${_UNDEF}" ]] \
+        || fail "_REVEAL 1"
 [[ $(_REVEAL "${__AS__SEQ_INIT}${__AS__SEQ_INIT}${_PAD}${_ARRAY}foo${_QUOTE}${_UNDEF}") == \
-    "\${__UNSUPPORTED_SEQUENCE__}foo\${_QUOTE}\${_UNDEF}" ]] || fail "_REVEAL 2"
+    "\${__UNSUPPORTED_SEQUENCE__}foo\${_QUOTE}\${_UNDEF}" ]] \
+        || fail "_REVEAL 2"
 [[ $(_REVEAL "$testquote") == \
-    "\${__AS__SOH}\${_PAD}\${__AS__US}\${_QUOTE}\${__AS__STX}\${_PAD}test\${_PAD}\${__AS__EOT}" ]] || fail "_REVEAL 3"
+    "\${__AS__SOH}\${_PAD}\${__AS__US}\${_QUOTE}\${__AS__STX}\${_PAD}test\${_PAD}\${__AS__EOT}" ]] \
+        || fail "_REVEAL 3"
 
 [[ $(_GET "$testlist" 0) == "$_UNDEF" ]] || fail "_GET 0"
 [[ $(_GET "$testlist" 1) == "test 1" ]] || fail "_GET 1"
@@ -86,7 +105,8 @@ eval "$(_READ list "$testexplode")"
 count=0
 for i in "${list[@]}"; do
     ((++count))
-    [[ "$i" == "$count" || "$i" == $'a\nb' || "$i" == "a b" || "$i" == "$_TRUE" ]] || fail "_READ loop $count $i"
+    [[ "$i" == "$count" || "$i" == $'a\nb' || "$i" == "a b" || "$i" == "$_TRUE" ]] \
+        || fail "_READ loop $count $i"
 done
 [ "$count" == 5 ] || fail "_READ loop unexpectedly ran $count times"
 
