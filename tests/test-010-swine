@@ -49,26 +49,38 @@ fail-hard() {(
 
 try fail
 # shellcheck disable=SC2154
-if ! catch foo || [ "$foo" != 1 ]; then
-     die 1 "1 Failure in catch $foo"
+if ! catch e || [ "$e" != 1 ]; then
+     die 1 "1 Failure in catch $e"
 fi
 
 try fail-hard
 # shellcheck disable=SC2154
-if ! catch foo || [ "$foo" != 2 ]; then
-    die 1 "2 Failure in catch $foo"
+if ! catch e || [ "$e" != 2 ]; then
+    die 1 "2 Failure in catch $e"
 fi
 
 try false
 # shellcheck disable=SC2154
-if ! catch foo || [ "$foo" != 1 ]; then
-     die 1 "3 Failure in catch $foo"
+if ! catch e || [ "$e" != 1 ]; then
+     die 1 "3 Failure in catch $e"
 fi
 
 try true
-if catch foo; then
+if catch e; then
 # shellcheck disable=SC2154
-    die 1 "4 Failure in catch $foo"
+    die 1 "4 Failure in catch $e"
+fi
+
+try echo "THIS SHOULD BE INVISIBLE" >/dev/null
+if catch e; then
+# shellcheck disable=SC2154
+    die 1 "5 Failure in try $e"
+fi
+
+try 'output=$( echo "THIS SHOULD BE INVISIBLE" )'
+if catch e || [[ $output != "THIS SHOULD BE INVISIBLE" ]]; then
+# shellcheck disable=SC2154
+    die 1 "6 Failure in try $e; output=$output"
 fi
 
 # die

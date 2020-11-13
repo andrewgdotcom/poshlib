@@ -59,7 +59,7 @@ __posh__try_last_err=0
 
 try() {
     __posh__try_last_err=0
-    eval "$*" || __posh__try_last_err=$?
+    eval "$(printf " %s" "$@")" || __posh__try_last_err=$?
 }
 
 catch() {
