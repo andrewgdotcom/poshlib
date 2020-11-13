@@ -114,22 +114,38 @@ See the comments at the top of parse-opt.sh for full usage instructions.
 
 This module sets some shell option defaults to make it more like perl's `strict`, registers an error handler that prints better debugging info, and defines some useful functions:
 
-* say
-* warn
-* die
-* contains
+* say "$text"
+    * prints a line on STDOUT without parsing special characters
+* warn "$text"
+    * like say, but for STDERR
+* die "$errcode" "$text"
+    * warns and exits the current (sub)shell with a given error code
+* try "$command" ; if catch e; then
+    * captures the error code of a simple command for testing
+* contains "$string" "${values[@]}"
+    * succeeds if a string is contained in an array or list of strings
+
+Note that try works by calling `eval` on its arguments, so they should be
+quoted accordingly. It does not work well for complex commands, subshells etc.
 
 ### flatten - convert a poshlib script with `use` dependencies into a flat script
 
 It defines one function, which prints the flattened script on STDOUT:
 
-* flatten
+* flatten "$script"
 
 ### rposh - run a poshlib script with `use` dependencies on a remote environment
 
 This requires a version of ssh(1) that supports ControlMaster.
 
-* rscript
+* rscript "$host" "$script"
+
+### ason - serialisation and deserialisation routines
+
+ASON is a lightweight serialisation format which enables complex data structures
+to be passed as strings. It requires no helper programs other than sed/awk.
+
+Currently only LIST types are implemented. See ason.sh for usage details.
 
 ## Notes
 
