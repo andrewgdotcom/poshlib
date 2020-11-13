@@ -1,3 +1,4 @@
+# shellcheck disable=SC2148
 ################################################################################
 # Declare a main entrypoint to a script. This allows the script to be both used
 # as a module and run directly, by invoking the main entrypoint on evaluation
@@ -13,7 +14,8 @@
 ################################################################################
 
 main() {
-    [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: main $@" >&2
+    [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: main ${*:-}" >&2
+    # shellcheck disable=SC2154
     if [ "$__posh__detected__shell" == "bash" ]; then
         # We expect to be in the second level of the bash call stack.
         # If we are any deeper, then the calling code is not at the top.
