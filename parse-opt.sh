@@ -1,4 +1,3 @@
-# shellcheck disable=SC2148
 ################################################################################
 # Extended getopt handler based on https://stackoverflow.com/a/29754866/1485960
 # This file has no magic number, and is not executable.
@@ -22,7 +21,7 @@
 # PO_SIMPLE_PARAMS="OUTPUT"
 # PO_SIMPLE_FLAGS="VERBOSE FORCE"
 #
-# eval "$(parse-opt-simple)"
+# eval $(parse-opt-simple)
 # --
 #
 # PO_SIMPLE_PARAMS contains a list of names of with-value long options (minus
@@ -38,7 +37,7 @@
 #
 # --
 # use parse-opt
-# eval "$(parse-opt-init)"
+# eval $(parse-opt-init)
 #
 # PO_SHORT_MAP["d::"]="DEBUG=1"
 # PO_SHORT_MAP["v"]="VERBOSE"
@@ -48,7 +47,7 @@
 # PO_LONG_MAP["comment::"]="COMMENT=no comment"
 # PO_LONG_MAP["verbose"]="VERBOSE"
 #
-# eval "$(parse-opt)"
+# eval $(parse-opt)
 # --
 #
 # A single colon in the key indicates that the command-line option requires a
@@ -85,9 +84,9 @@ __PO__set_var() {
     # otherwise to the default (if that was provided)
     # NB the embedded quotes prevent eval from word-splitting the values
     if [[ $value ]]; then
-        echo "$variable='$value';"
+        echo $variable="'$value';"
     elif [[ $default ]]; then
-        echo "$variable='$default';"
+        echo $variable="'$default';"
     fi
 }
 
@@ -190,7 +189,7 @@ __PO__parse_argv() {
     # return the remaining arguments
     # `set` reloads ARGV; `--` forbids set from consuming options
     # `printf %q` re-quotes the arguments to prevent word-splitting
-    echo "set -- $(printf ' %q' "$@")"
+    echo set -- $(printf ' %q' "$@")
 }
 
 parse-opt-init() {
@@ -198,10 +197,8 @@ parse-opt-init() {
 }
 
 parse-opt() {
-    # shellcheck disable=SC2016
-    echo 'eval "$(__PO__canonicalize_argv "$@")";'
-    # shellcheck disable=SC2016
-    echo 'eval "$(__PO__parse_argv "$@")";'
+    echo 'eval $(__PO__canonicalize_argv "$@");'
+    echo 'eval $(__PO__parse_argv "$@");'
 }
 
 parse-opt-simple() {
@@ -211,14 +208,14 @@ parse-opt-simple() {
     # Split on default whitespace
     local IFS=$' \t\n'
     # Coerce prefix to upper case
-    PO_SIMPLE_PREFIX="$(tr a-z- A-Z_ <<< "${PO_SIMPLE_PREFIX:-}")"
+    PO_SIMPLE_PREFIX="$(tr a-z- A-Z_ <<< ${PO_SIMPLE_PREFIX:-})"
     # Coerce argument names to lower case and the corresponding envars to upper case
     for i in ${PO_SIMPLE_PARAMS:-}; do
-        echo "PO_LONG_MAP[$(tr A-Z_ a-z- <<< "$i"):]=${PO_SIMPLE_PREFIX}$(tr a-z- A-Z_ <<< "$i");"
+        echo "PO_LONG_MAP[$(tr A-Z_ a-z- <<< $i):]=${PO_SIMPLE_PREFIX}$(tr a-z- A-Z_ <<< $i);"
     done
     # and for flags
     for i in ${PO_SIMPLE_FLAGS:-}; do
-        echo "PO_LONG_MAP[$(tr A-Z_ a-z- <<< "$i")]=${PO_SIMPLE_PREFIX}$(tr a-z- A-Z_ <<< "$i");"
+        echo "PO_LONG_MAP[$(tr A-Z_ a-z- <<< $i)]=${PO_SIMPLE_PREFIX}$(tr a-z- A-Z_ <<< $i);"
     done
 
     parse-opt

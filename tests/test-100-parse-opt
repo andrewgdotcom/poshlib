@@ -1,36 +1,28 @@
 #!/bin/bash
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
-# shellcheck disable=SC1090
-. "${SCRIPT_DIR}/../poshlib.sh" || exit 1
+. ${SCRIPT_DIR}/../poshlib.sh || exit 1
 use swine
 use parse-opt
 
-eval "$(parse-opt-init)"
+eval $(parse-opt-init)
 
 #####
 # Set defaults here e.g. via envars, config
 #####
 
-DEBUG=''
-VERBOSE=''
-FORCE=''
-OUTPUT=''
-INPUT=''
+DEBUG=
+VERBOSE=
+FORCE=
+OUTPUT=
+INPUT=
 
-# shellcheck disable=SC2034
 PO_SHORT_MAP["d::"]="DEBUG=x y z"
-# shellcheck disable=SC2034
 PO_SHORT_MAP["v"]="VERBOSE"
-# shellcheck disable=SC2034
 PO_SHORT_MAP["f"]="FORCE"
 
-# shellcheck disable=SC2034
 PO_LONG_MAP["output:"]="OUTPUT"
-# shellcheck disable=SC2034
 PO_LONG_MAP["input:"]="INPUT"
-# shellcheck disable=SC2034
 PO_LONG_MAP["verbose"]="VERBOSE"
-# shellcheck disable=SC2034
 PO_LONG_MAP["force"]="FORCE"
 
 declare -A expected_output
@@ -46,24 +38,21 @@ expected_output['--output="A +" --input "a # c" ']=",,,A +,a # c;"
 #expected_output['-f -x -d']=",true,,,;-f -x -d"
 
 for input in "${!expected_output[@]}"; do
-    eval "set -- $input"
-    eval "$(parse-opt)"
+    eval set -- $input
+    eval $(parse-opt)
     output="${DEBUG:-},${FORCE:-},${VERBOSE:-},${OUTPUT:-},${INPUT:-};$*"
     if [[ "$output" != "${expected_output[$input]}" ]]; then
         echo "Failed on '$input'"
         echo "   expect '${expected_output[$input]}'"
         echo "      got '$output'"
     fi
-    DEBUG='' FORCE='' VERBOSE='' OUTPUT='' INPUT=''
+    DEBUG= FORCE= VERBOSE= OUTPUT= INPUT=
 done
 
 # Now do the same for parse-opt-simple
 
-# shellcheck disable=SC2034
 PO_SIMPLE_PREFIX="TEST_"
-# shellcheck disable=SC2034
 PO_SIMPLE_FLAGS="VERBOSE force"
-# shellcheck disable=SC2034
 PO_SIMPLE_PARAMS="OUTPUT input"
 
 expected_output=()
@@ -76,13 +65,13 @@ expected_output['--output=- --input "--" ']=",,,-,--;"
 expected_output['--output="A +" --input "a # c" ']=",,,A +,a # c;"
 
 for input in "${!expected_output[@]}"; do
-    eval "set -- $input"
-    eval "$(parse-opt-simple)"
+    eval set -- $input
+    eval $(parse-opt-simple)
     output=",${TEST_FORCE:-},${TEST_VERBOSE:-},${TEST_OUTPUT:-},${TEST_INPUT:-};$*"
     if [[ "$output" != "${expected_output[$input]}" ]]; then
         echo "Failed on '$input'"
         echo "   expect '${expected_output[$input]}'"
         echo "      got '$output'"
     fi
-    TEST_FORCE='' TEST_VERBOSE='' TEST_OUTPUT='' TEST_INPUT=''
+    TEST_FORCE= TEST_VERBOSE= TEST_OUTPUT= TEST_INPUT=
 done

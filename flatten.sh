@@ -1,4 +1,3 @@
-# shellcheck disable=SC2148
 ################################################################################
 # Flatten a poshlib script with use dependencies into a static script.
 # Any libs/source files to be flattened MUST be sourced using `use` and not
@@ -24,32 +23,25 @@ flatten() { (
     while IFS= read -r input; do
         if
             path=$(say "$input" | awk '$1=="use-from" {print $2}')
-            [ -n "$path" ] && [ -z "$continuation" ]
+            [ -n "$path" -a -z "$continuation" ]
         then
             __posh__flatten__path=$(__posh__prependpath "$__posh__flatten__path" "$path" "$__posh__flatten__stack")
             say "# FLATTEN: USE FROM $path >> $__posh__flatten__path"
         elif
             module=$(say "$input" | awk '$1=="use" {print $2}')
-            [ -n "$module" ] && [ -z "$continuation" ]
+            [ -n "$module" -a -z "$continuation" ]
         then
             say "# FLATTEN: USE $module"
             [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: FLATTEN: USE $module"
             __posh__descend flatten "$module"
             say "# FLATTEN: END USE $module"
             [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: FLATTEN: END USE $module"
-        elif ! awk \
-"/^[ \\t]*(\\.[ \\t]|source[ \\t]).*\\/poshlib.sh([ \\t|&\"')].*)?$/ {exit 1}" \
-                <<< "${input}"; then
-            # BEWARE: the above is double-quoted so we can use a single-quote
-            # in the regex.
-            # Note: awk will exit 0 by default so we "fail" on match and
-            # invert the test above.
-
+        elif [ "${input#.}" != "$input" -o "${input#source}" != "$input" ] &&
+                [ "${input%poshlib.sh *}" != "${input}" ]; then
             # Simulate a fresh usepath and callstack while flattening.
             # WARNING: this may end up using a different version of poshlib.
             # Also, this only works if nobody has done anything nonstandard to
             # __posh__usepath since we initialised it.
-            # shellcheck disable=SC2154
             __posh__flatten__path="${__posh__usepath##*:}"
             __posh__flatten__stack="${script}"
             say "# FLATTEN: INIT usepath=$__posh__flatten__path"

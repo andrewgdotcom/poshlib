@@ -51,14 +51,8 @@ Source the `poshlib.sh` file at the top of your script. It is often useful to do
 
 ```
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
-. "$SCRIPT_DIR/poshlib/poshlib.sh" || exit 1
+. $SCRIPT_DIR/poshlib/poshlib.sh || exit 1
 ```
-
-NOTE that some poshlib routines (e.g. rscript) expect the second line above
-to be in a narrowly-defined format, otherwise they will fail to resolve the
-dependencies correctly (this avoids having to reimplement a shell parser).
-Please try not to deviate too far from the example form above, otherwise you
-may get errors of the form "Unexpected descent before init".
 
 You can now enable the individual modules with `use MODULE`. Module names are the filenames without the `.sh` suffix.
 
@@ -97,14 +91,14 @@ This requires extended getopt(1). All of the functions *must* be invoked using `
 
 The full-featured version is:
 
-* eval "$(parse-opt-init)"
-* eval "$(parse-opt)"
+* eval $(parse-opt-init)
+* eval $(parse-opt)
 
-You must populate the associative arrays PO_SHORT_OPTIONS and PO_LONG_OPTIONS after `eval "$(parse-opt-init)"` and before `eval "$(parse-opt)"`. The named variables are initialised with the arguments to their corresponding command line flags. The options are excised from ARGV leaving only positional arguments.
+You must populate the associative arrays PO_SHORT_OPTIONS and PO_LONG_OPTIONS after `eval $(parse-opt-init)` and before `eval $(parse-opt)`. The named variables are initialised with the arguments to their corresponding command line flags. The options are excised from ARGV leaving only positional arguments.
 
 Alternatively one can use a simplified system, at the cost of flexibility:
 
-* eval "$(parse-opt-simple)"
+* eval $(parse-opt-simple)
 
 This automatically creates the mappings between options and variables, however it is not possible to specify default values or short options using this method.
 
@@ -114,39 +108,23 @@ See the comments at the top of parse-opt.sh for full usage instructions.
 
 This module sets some shell option defaults to make it more like perl's `strict`, registers an error handler that prints better debugging info, and defines some useful functions:
 
-* say "$text"
-    * prints a line on STDOUT without parsing special characters
-* warn "$text"
-    * like say, but for STDERR
-* die "$errcode" "$text"
-    * warns and exits the current (sub)shell with a given error code
-* try "$command" ; if catch e; then
-    * captures the error code of a simple command for testing
-* contains "$string" "${values[@]}"
-    * succeeds if a string is contained in an array or list of strings
-
-Note that try works by calling `eval` on its arguments, so they should be
-quoted accordingly. It does not work well for complex commands, subshells etc.
+* say
+* warn
+* die
+* contains
 
 ### flatten - convert a poshlib script with `use` dependencies into a flat script
 
 It defines one function, which prints the flattened script on STDOUT:
 
-* flatten "$script"
+* flatten
 
 ### rposh - run a poshlib script with `use` dependencies on a remote environment
 
 This requires a version of ssh(1) that supports ControlMaster.
 
-* rscript "$host" "$script"
-
-### ason - serialisation and deserialisation routines
-
-ASON is a lightweight serialisation format which enables complex data structures
-to be passed as strings. It requires no helper programs other than sed/awk.
-
-Currently only LIST types are implemented. See ason.sh for usage details.
+* rscript
 
 ## Notes
 
-* poshlib currently only works with bash, but it is intended to (eventually) also support other POSIX shells.
+* poshlib currently only works with bash, but it is intended to (eventually) also support dash.
