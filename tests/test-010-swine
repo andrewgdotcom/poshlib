@@ -1,9 +1,10 @@
 #!/bin/bash
-. $(dirname "${BASH_SOURCE[0]}")/../poshlib.sh || exit 1
+# shellcheck disable=SC1090
+. "$(dirname "${BASH_SOURCE[0]}")/../poshlib.sh" || exit 1
 use swine
 
 # say
-test="Hello \n this should not be line broken"
+test="Hello \\n this should not be line broken"
 if [ "$test" != "$(say "$test")" ]; then
     die 1 "failure in say"
 fi
@@ -18,23 +19,63 @@ contains wibble foo bar wibble
 
 # error handling
 tempfile=$(mktemp)
-cat <<EOF >$tempfile
+cat <<EOF >"$tempfile"
 #!/bin/bash
-. $(dirname "${BASH_SOURCE[0]}")/../poshlib.sh || exit 1
+. "$(dirname "${BASH_SOURCE[0]}")/../poshlib.sh" || exit 1
 use swine
 ls FILEDOESNOTEXIST 2>/dev/null
 EOF
-if output=$(/bin/bash $tempfile 2>&1); then
+if output=$(/bin/bash "$tempfile" 2>&1); then
     die 1 "failure in error handling: died with no error"
 else
-    if [ $? != 2 ]; then
+    if [ "$?" != 2 ]; then
 	die 1 "failure in error handling: died with wrong error number"
     fi
 fi
 if [ "$output" != "errexit 2 on line 4 $tempfile" ]; then
     die 1 "failure in error handling: died with wrong error message ($output)"
 fi
-rm $tempfile
+rm "$tempfile"
+
+# try/catch
+
+fail() {
+    return 1
+}
+
+fail-hard() {(
+    exit 2
+)}
+
+try fail
+# shellcheck disable=SC2154
+if ! catch e || [ "$e" != 1 ]; then
+     die 1 "1 Failure in catch $e"
+fi
+
+try fail-hard
+# shellcheck disable=SC2154
+if ! catch e || [ "$e" != 2 ]; then
+    die 1 "2 Failure in catch $e"
+fi
+
+try false
+# shellcheck disable=SC2154
+if ! catch e || [ "$e" != 1 ]; then
+     die 1 "3 Failure in catch $e"
+fi
+
+try true
+if catch e; then
+# shellcheck disable=SC2154
+    die 1 "4 Failure in catch $e"
+fi
+
+output=$( try echo "THIS SHOULD BE INVISIBLE" )
+if catch e || [[ $output != "THIS SHOULD BE INVISIBLE" ]]; then
+# shellcheck disable=SC2154
+    die 1 "5 Failure in try $e; output=$output"
+fi
 
 # die
 die 0 "" 2>/dev/null
