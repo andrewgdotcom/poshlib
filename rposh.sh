@@ -34,13 +34,13 @@ rscript() { (
     # parse RPOSH_SSH_OPTIONS into an array, and intersperse them with "-o" flags
     IFS=, read -r -a ssh_key_values <<< "${RPOSH_SSH_OPTIONS:-}"
     for option in "${ssh_key_values[@]}"; do
-        ssh_options=("${ssh_options[@]}" "-o" "$(printf '%s' "$option")")
+        ssh_options=("${ssh_options[@]}" "-o" "$option")
     done
     if [ -n "${RPOSH_SSH_USER:-}" ]; then
         ssh_options=("${ssh_options[@]}" "-o" "User=${RPOSH_SSH_USER}")
     fi
     if [ -n "${RPOSH_SUDO_USER:-}" ]; then
-        pre_command=("sudo" "-u" "${RPOSH_SUDO_USER}")
+        pre_command=("sudo" "-u" "${RPOSH_SUDO_USER}" "--")
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: pre_command=(${pre_command[*]})"
     fi
     tmpdir=$(mktemp -d)
@@ -79,6 +79,7 @@ rscript() { (
             try ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" \
                 -- "$target" "exit 0" >/dev/null 2>&1
             if catch e; then
+                # shellcheck disable=SC2154
                 warn "Error $e establishing connection to $target"
                 continue
             fi
@@ -95,9 +96,10 @@ rscript() { (
         scp -q -p "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
             "$tmpdir/command" "${target}:${remote_tmpdir}/command"
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: remote_command=${pre_command[*]} $remote_tmpdir/command"
+        # shellcheck disable SC2046
         try ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
             "$target" "${pre_command[@]}" "$remote_tmpdir/command" \
-            "$(printf ' %s' "$@")" >> "$stdout_dev" 2>> "$stderr_dev"
+            $(printf ' %q' "$@") >> "$stdout_dev" 2>> "$stderr_dev"
         if catch e; then
             warn "Error $e running command on $target"
         fi

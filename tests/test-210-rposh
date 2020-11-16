@@ -5,12 +5,18 @@ use swine
 use rposh
 
 if [ "${1:-}" == "" ]; then
-result=$(rscript ,localhost,, --ssh-user="$USER" --sudo-user="$USER" "${BASH_SOURCE[0]}" "last" "test")
-    if [ "$result" != last ]; then
-	die 1 "Received unexpected output: $result"
+    result=$(
+        try rscript ",localhost,," --ssh-user="$USER" --sudo-user="$USER" "${BASH_SOURCE[0]}" '\[last\]' 'SHOULD NOT BE DISPLAYED'
+        if catch e; then
+            # shellcheck disable=SC2154
+            say "ERROR $e"
+        fi
+    )
+    if [ "$result" != '\[last\]' ]; then
+        die 1 "Received unexpected output: '$result' != '\\[last\\]'"
     fi
-elif [ "${1:-}" != "last" ]; then
-    die 1 "Mangled arguments to test-rposh"
+elif [ "${1:-}" != '\[last\]' ]; then
+    die 1 "Mangled arguments to test-rposh: '${1:-}' != '\\[last\\]'"
 else
     say "$1"
 fi

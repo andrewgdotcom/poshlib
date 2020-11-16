@@ -71,16 +71,10 @@ if catch e; then
     die 1 "4 Failure in catch $e"
 fi
 
-try echo "THIS SHOULD BE INVISIBLE" >/dev/null
-if catch e; then
-# shellcheck disable=SC2154
-    die 1 "5 Failure in try $e"
-fi
-
-try 'output=$( echo "THIS SHOULD BE INVISIBLE" )'
+output=$( try echo "THIS SHOULD BE INVISIBLE" )
 if catch e || [[ $output != "THIS SHOULD BE INVISIBLE" ]]; then
 # shellcheck disable=SC2154
-    die 1 "6 Failure in try $e; output=$output"
+    die 1 "5 Failure in try $e; output=$output"
 fi
 
 # die
