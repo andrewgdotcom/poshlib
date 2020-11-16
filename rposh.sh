@@ -34,7 +34,7 @@ rscript() { (
     # parse RPOSH_SSH_OPTIONS into an array, and intersperse them with "-o" flags
     IFS=, read -r -a ssh_key_values <<< "${RPOSH_SSH_OPTIONS:-}"
     for option in "${ssh_key_values[@]}"; do
-        ssh_options=("${ssh_options[@]}" "-o" "$(printf '%q' "$option")")
+        ssh_options=("${ssh_options[@]}" "-o" "$(printf '%s' "$option")")
     done
     if [ -n "${RPOSH_SSH_USER:-}" ]; then
         ssh_options=("${ssh_options[@]}" "-o" "User=${RPOSH_SSH_USER}")
@@ -76,8 +76,12 @@ rscript() { (
                 -O exit -- "$target" >/dev/null 2>&1 || true
             # start up a new controlmaster connection
             [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: opening control socket $controlpath"
-            ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" \
+            try ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" \
                 -- "$target" "exit 0" >/dev/null 2>&1
+            if catch e; then
+                warn "Error $e establishing connection to $target"
+                continue
+            fi
         fi
 
         # redirect stdout and stderr as required
@@ -86,20 +90,26 @@ rscript() { (
         [ -z "${RPOSH_STDOUT_DIR:-}" ] || stdout_dev="$RPOSH_STDOUT_DIR/$target.stdout"
         [ -z "${RPOSH_STDERR_DIR:-}" ] || stderr_dev="$RPOSH_STDERR_DIR/$target.stderr"
 
-        remote_tmpdir=$(ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
-            "$target" "mktemp -d" < /dev/null)
+        remote_tmpdir=$(ssh "${ssh_options[@]}" \
+            "-o" "ControlPath=$controlpath" -- "$target" "mktemp -d" </dev/null)
         scp -q -p "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
             "$tmpdir/command" "${target}:${remote_tmpdir}/command"
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: remote_command=${pre_command[*]} $remote_tmpdir/command"
-        ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
+        try ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
             "$target" "${pre_command[@]}" "$remote_tmpdir/command" \
-            "$(printf ' %q' "$@")" >> "$stdout_dev" 2>> "$stderr_dev"
+            "$(printf ' %s' "$@")" >> "$stdout_dev" 2>> "$stderr_dev"
+        if catch e; then
+            warn "Error $e running command on $target"
+        fi
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: command complete"
 
         if [ -z "${RPOSH_SSH_KEEPALIVE:-}" ] || [ -z "${XDG_RUNTIME_DIR:-}" ]; then
             # shut down controlmaster connection
-            ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -O exit -- \
-                "$target" >/dev/null 2>&1
+            try ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" \
+                -O exit -- "$target" >/dev/null 2>&1
+            if catch e; then
+                warn "Error $e shutting down connection to $target"
+            fi
             [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: shut down connection to $target"
         fi
     done
