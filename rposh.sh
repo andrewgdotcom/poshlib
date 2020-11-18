@@ -13,13 +13,14 @@ rscript() { (
     use swine
     use flatten
     use parse-opt
+    use job-pool
 
     [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: COMMAND: rscript $*"
 
     # shellcheck disable=SC2034
     PO_SIMPLE_PREFIX="RPOSH_"
     # shellcheck disable=SC2034
-    PO_SIMPLE_PARAMS="SUDO_USER SSH_USER SSH_OPTIONS SSH_KEEPALIVE STDOUT_DIR STDERR_DIR"
+    PO_SIMPLE_PARAMS="SUDO_USER SSH_USER SSH_OPTIONS SSH_KEEPALIVE STDOUT_DIR STDERR_DIR THREADS"
     eval "$(parse-opt-simple)"
 
     host_list="$1"; shift
@@ -29,7 +30,6 @@ rscript() { (
         "-o" "ControlMaster=auto")
 
     # parse host_list into an array
-    # TODO: why doesn't `say $1 | IFS=, read ...` work?
     IFS=, read -r -a hosts <<< "$host_list"
     # parse RPOSH_SSH_OPTIONS into an array, and intersperse them with "-o" flags
     IFS=, read -r -a ssh_key_values <<< "${RPOSH_SSH_OPTIONS:-}"
@@ -49,9 +49,11 @@ rscript() { (
     [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: ssh_options=(${ssh_options[*]})"
     [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: hosts=(${hosts[*]})"
 
-    for target in "${hosts[@]}"; do
-        # skip empty array elements, these can be created by trailing commas
-        [ -n "$target" ] || continue
+    invoke_remote() {
+        local target=$1; shift
+        local e
+        local controldir controlpath stdout_dev stderr_dev remote_tmpdir
+
         if [ -n "${XDG_RUNTIME_DIR:-}" ]; then
             controldir="${XDG_RUNTIME_DIR}/rposh"
             # shellcheck disable=SC2174
@@ -114,5 +116,20 @@ rscript() { (
             fi
             [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: shut down connection to $target"
         fi
+    }
+
+    # initialise threadpool
+    job_pool_init "${RPOSH_THREADS:-1}" "${POSH_DEBUG:-}"
+
+    for target in "${hosts[@]}"; do
+        # skip empty array elements, these can be created by trailing commas
+        [ -n "$target" ] || continue
+        job_pool_run invoke_remote "$target" "$@"
     done
+
+    # wait and clean up
+    try job_pool_shutdown
+    if catch e; then
+        warn "Error $e shutting down threadpool"
+    fi
 ) }
