@@ -119,7 +119,7 @@ rscript() { (
     }
 
     # initialise threadpool
-    job_pool_init "${RPOSH_THREADS:-1}"
+    job_pool_init "${RPOSH_THREADS:-1}" "${POSH_DEBUG:-}"
 
     for target in "${hosts[@]}"; do
         # skip empty array elements, these can be created by trailing commas
@@ -128,5 +128,8 @@ rscript() { (
     done
 
     # wait and clean up
-    job_pool_shutdown
+    try job_pool_shutdown
+    if catch e; then
+        warn "Error $e shutting down threadpool"
+    fi
 ) }

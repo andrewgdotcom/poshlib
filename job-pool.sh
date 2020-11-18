@@ -38,7 +38,7 @@ job_pool_job_queue=/tmp/job_pool_job_queue_$$
 job_pool_result_log=/tmp/job_pool_result_log_$$
 
 # toggle command echoing
-job_pool_echo_command=0
+job_pool_echo_command=
 
 # number of parallel jobs allowed.  also used to determine if job_pool_init
 # has been called when jobs are queued.
@@ -54,7 +54,7 @@ job_pool_nerrors=0
 # \brief debug output
 function _job_pool_echo()
 {
-    if [[ "${job_pool_echo_command}" == "1" ]]; then
+    if [[ "${job_pool_echo_command}" ]]; then
         printf "%s" "$*"
     fi
 }
@@ -159,7 +159,7 @@ function _job_pool_start_workers()
 function job_pool_init()
 {
     local pool_size=${1:-1}
-    local echo_command=${2:-0}
+    local echo_command=${2:-}
 
     # set the global attibutes
     job_pool_pool_size=$pool_size
