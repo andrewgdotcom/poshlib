@@ -34,22 +34,34 @@ __ason__is_entity "$_UNDEF" || fail __ason__is_entity
 [[ "$(__ason__unpad $'    foo bar \t ')" == "foo bar" ]] \
     || fail "__ason__unpad 3"
 
-testquote="${__AS__SOH}${_PAD}${__AS__US}${_QUOTE}${__AS__STX}${_PAD}test${_PAD}${__AS__EOT}"
+testquote="${__AS__SOH}${_PAD}${__AS__US}${_QUOTE}${__AS__STX}\
+${_PAD}test${_PAD}${__AS__EOT}"
 [[ $(_QUOTE "test") == "$testquote" ]] \
     || fail _QUOTE
 
-testlist="${__AS__SOH}${_PAD}${__AS__US}${_LIST}${__AS__STX}${_PAD}test 1${_PAD}${__AS__US}${_PAD}${testquote}${_PAD}${__AS__EOT}"
+testlist="${__AS__SOH}${_PAD}${__AS__US}${_LIST}${__AS__STX}\
+${_PAD}test 1${_PAD}${__AS__US}${_PAD}${testquote}${_PAD}${__AS__EOT}"
 [[ $(_LIST "test 1" "$testquote") == "$testlist" ]] \
     || fail _LIST
 
-[[ $(_SPLIT , "foo,bar,wibble") == $(_LIST "foo" "bar" "wibble" ) ]] \
+[[ $(_SPLIT , "foo,bar,,wibble") == $(_LIST "foo" "bar" "" "wibble" ) ]] \
     || fail _SPLIT
+
+testdict="${__AS__SOH}${_PAD}${__AS__US}${_DICT}${__AS__STX}\
+${_PAD}test 1${_PAD}${__AS__US}${_PAD}test 1${_PAD}${__AS__RS}\
+${_PAD}testquote${_PAD}${__AS__US}${_PAD}${testquote}${_PAD}${__AS__EOT}"
+[[ $(_DICT "$(_LIST "test 1" "testquote")" "$testlist") == $testdict ]] \
+    || fail _DICT
+
+unpadlist="${__AS__SOH}${_PAD}${__AS__US}${_LIST}${__AS__STX}\
+    ${_PAD}test 1${_PAD}${__AS__US}${_TRUE}${__AS__US}${__AS__EOT}"
 
 
 # Metadata tests
 
 
-testkeys="${__AS__SOH}${_PAD}${__AS__US}${_LIST}${__AS__STX}${_PAD}${_PAD}${_PAD}${__AS__EOT}"
+testkeys="${__AS__SOH}${_PAD}${__AS__US}${_LIST}${__AS__STX}\
+${_PAD}${_PAD}${_PAD}${__AS__EOT}"
 [[ $(__ason__get_header_keys "${testquote}") == "$testkeys" ]] \
     || fail __ason__get_header_keys
 
@@ -67,6 +79,8 @@ testkeys="${__AS__SOH}${_PAD}${__AS__US}${_LIST}${__AS__STX}${_PAD}${_PAD}${_PAD
     || fail "_LENGTH 1"
 [[ $(_LENGTH "$testlist") == "2" ]] \
     || fail "_LENGTH 2"
+[[ $(_LENGTH "$unpadlist") == "3" ]] \
+    || fail "_LENGTH 3"
 
 
 # lowlevel iterator tests
@@ -97,9 +111,15 @@ teststext="$testlist${__AS__US}$testquote"
 [[ $(_GET "$testlist" 2) == "$testquote" ]] || fail "_GET 2"
 [[ $(_GET "$testlist" 3) == "$_UNDEF" ]] || fail "_GET 3"
 
-eval "$(_READ list "$(_LIST "$_TRUE")")"
+[[ $(_GET "$unpadlist" 2) == "$_TRUE" ]] || fail "_GET _TRUE"
+[[ $(_GET "$unpadlist" 3) == "" ]] || fail "_GET ''"
+
+eval "$(_READ list "$unpadlist")"
 # shellcheck disable=SC2154
-[[ "${list[*]}" == "$_TRUE" ]] || fail "_READ _TRUE"
+[[ "${list[0]}" == "test 1" ]] || fail "_READ test 1"
+[[ "${list[1]}" == "$_TRUE" ]] || fail "_READ _TRUE"
+[[ "${list[2]}" == "" ]] || fail "_READ ''"
+[[ "${list[3]-unset}" == "unset" ]] || fail "_READ unset"
 
 testexplode="$(_LIST 1 $'a\nb' "$_TRUE" 4 "a b")"
 eval "$(_READ list "$testexplode")"

@@ -84,13 +84,57 @@ _LIST() {(
 
     __ason__begin_header "$_LIST"
     __ason__begin_text
-    __ason__join "pad" "$__AS__US" "$@"
+    if [ "${1-$_UNDEF}" == "$_UNDEF" ]; then
+        printf "%s" "$_UNDEF"
+    else
+        __ason__join "pad" "$__AS__US" "$@"
+    fi
     __ason__end
 )}
 
 _DICT() {(
     use swine
-    die 101 "Not implemented"
+    use ason/lowlevel
+
+    __ason__begin_header "$_DICT"
+    __ason__begin_text
+
+    if [ "${1-$_UNDEF}" = "$_UNDEF" ]; then
+        printf "%s" "$_UNDEF"
+    else
+        [ "$(_TYPE "$1")" == "$_LIST" ] || die 2 "Argument 1 not a list"
+        keys=$(__ason__get_stext "$1" || die 2 "Invalid structure 1"); shift
+        [ "$(_TYPE "$1")" == "$_LIST" ] || die 2 "Argument 2 not a list"
+        values=$(__ason__get_stext "$1" || die 2 "Invalid structure 2"); shift
+        start=1
+        last=
+        key=
+        value=
+        while [ -z "$last" ]; do
+            key="$(__ason__to_next "$__AS__US" "$keys")"
+            # remove the found item and any subsequent separator
+            keys="${keys#$key}"
+            [ -n "$keys" ] || last=1
+            keys="${keys#$__AS__US}"
+            value="$(__ason__to_next "$__AS__US" "$values")"
+            # remove the found item and any subsequent separator
+            values="${values#$value}"
+            [ -n "$values" ] || last=1
+            values="${values#$__AS__US}"
+            if [ -z "$start" ]; then
+                printf "%s" "$__AS__RS"
+            else
+                start=''
+            fi
+            printf "%s" "$key$__AS__US$value"
+        done
+    fi
+
+    __ason__end
+
+    if [ -n "$keys" ] || [ -n "$values" ]; then
+        die 1 "Lists not the same length"
+    fi
 )}
 
 _TABLE() {(
@@ -137,15 +181,17 @@ _LENGTH() {(
     case "$type" in
     "$_LIST" | "$_DICT" )
         separator="$__AS__US"
-        [[ "$type" == "$_LIST" ]] || separator="$__AS__RS"
-        stext=$(__ason__get_stext "$structure" || die "invalid structure")
+        [ "$type" == "$_LIST" ] || separator="$__AS__RS"
+        stext=$(__ason__get_stext "$structure" || die 2 "Invalid structure")
         count=0
         item=
-        while [ -n "$stext" ]; do
+        while true; do
             item="$(__ason__to_next "$separator" "$stext")"
-            stext="${stext#$item}"
-            stext="${stext#$separator}"
+            [ "$item" != "$_UNDEF" ] || break
             (( ++count ))
+            stext="${stext#$item}"
+            [ -n "$stext" ] || break
+            stext="${stext#$separator}"
         done
         printf "%s" "$count"
         ;;
@@ -203,17 +249,18 @@ _GET() {(
     case "$type" in
     "$_LIST" )
         subscript="$1"; shift
-        stext=$(__ason__get_stext "$structure" || die "invalid structure")
+        stext=$(__ason__get_stext "$structure" || die 2 "Invalid structure")
         count=0
-        item=
-        while [ "$count" -lt "$subscript" ] && [ -n "$stext" ]; do
+        item="$_UNDEF"
+        while [ "$count" -lt "$subscript" ]; do
             item="$(__ason__to_next "$__AS__US" "$stext")"
+            (( ++count ))
             # remove the found item and any subsequent separator
             stext="${stext#$item}"
+            [ -n "$stext" ] || break
             stext="${stext#$__AS__US}"
-            (( ++count ))
         done
-        if [ -n "$item" ] && [ "$count" = "$subscript" ]; then
+        if [ "$count" = "$subscript" ]; then
             printf "%s" "$(__ason__unpad "$item")"
         else
             printf "%s" "$_UNDEF"
@@ -244,6 +291,9 @@ _VALUES() {(
     "$_LIST" )
         say "$structure"
         ;;
+    "$_DICT" )
+        die 101 "_VALUES _DICT Not implemented"
+        ;;
     * )
         die 101 "Not implemented"
         ;;
@@ -259,13 +309,13 @@ _READ() {(
 
     case "$type" in
     "$_LIST" )
-        stext=$(__ason__get_stext "$structure" || die "invalid structure")
+        stext=$(__ason__get_stext "$structure" || die 2 "Invalid structure")
         printf "%s" "$varname=("
-        while [ -n "$stext" ]; do
+        while true; do
             item=$(__ason__to_next "$__AS__US" "$stext")
             printf " %q" "$(__ason__unpad "$item")"
             stext="${stext#$item}"
-            # the following is a no-op after the last item
+            [ -n "$stext" ] || break
             stext="${stext#$__AS__US}"
         done
         printf " )"
@@ -315,7 +365,18 @@ _READ() {(
 
 _KEYS() {(
     use swine
-    die 101 "Not implemented"
+    use ason/lowlevel
+    structure="$1"; shift
+    type="$(_TYPE "$structure")"
+
+    case "$type" in
+    "$_DICT" )
+        die 101 "_KEYS _DICT Not implemented"
+        ;;
+    *)
+        die 101 "Not implemented"
+        ;;
+    esac
 )}
 
 _COLUMNS() {(
@@ -325,7 +386,18 @@ _COLUMNS() {(
 
 _SLICE() {(
     use swine
-    die 101 "Not implemented"
+    use ason/lowlevel
+    structure="$1"; shift
+    type="$(_TYPE "$structure")"
+
+    case "$type" in
+    "$_LIST" )
+        die 101 "_SLICE _LIST Not implemented"
+        ;;
+    *)
+        die 101 "Not implemented"
+        ;;
+    esac
 )}
 
 _ROW() {
@@ -435,47 +507,149 @@ _LAMINATE() {(
 
 _SET() {(
     use swine
-    die 101 "Not implemented"
+    use ason/lowlevel
+    structure="$1"; shift
+    type="$(_TYPE "$structure")"
+
+    case "$type" in
+    "$_LIST" )
+        die 101 "_SET _LIST Not implemented"
+        ;;
+    "$_DICT" )
+        die 101 "_SET _DICT Not implemented"
+        ;;
+    *)
+        die 101 "Not implemented"
+        ;;
+    esac
 )}
 
 _POP() {(
     use swine
-    die 101 "Not implemented"
+    use ason/lowlevel
+    structure="$1"; shift
+    type="$(_TYPE "$structure")"
+
+    case "$type" in
+    "$_LIST" )
+        die 101 "_POP _LIST Not implemented"
+        ;;
+    *)
+        die 101 "Not implemented"
+        ;;
+    esac
 )}
 
 _SHIFT() {(
     use swine
-    die 101 "Not implemented"
+    use ason/lowlevel
+    structure="$1"; shift
+    type="$(_TYPE "$structure")"
+
+    case "$type" in
+    "$_LIST" )
+        die 101 "_SHIFT _LIST Not implemented"
+        ;;
+    *)
+        die 101 "Not implemented"
+        ;;
+    esac
 )}
 
 _PUSH() {(
     use swine
-    die 101 "Not implemented"
+    use ason/lowlevel
+    structure="$1"; shift
+    type="$(_TYPE "$structure")"
+
+    case "$type" in
+    "$_LIST" )
+        die 101 "_PUSH _LIST Not implemented"
+        ;;
+    *)
+        die 101 "Not implemented"
+        ;;
+    esac
 )}
 
 _UNSHIFT() {(
     use swine
-    die 101 "Not implemented"
+    use ason/lowlevel
+    structure="$1"; shift
+    type="$(_TYPE "$structure")"
+
+    case "$type" in
+    "$_LIST" )
+        die 101 "_UNSHIFT _LIST Not implemented"
+        ;;
+    *)
+        die 101 "Not implemented"
+        ;;
+    esac
 )}
 
 _PASTE() {(
     use swine
-    die 101 "Not implemented"
+    use ason/lowlevel
+    structure="$1"; shift
+    type="$(_TYPE "$structure")"
+
+    case "$type" in
+    "$_LIST" )
+        die 101 "_PASTE _LIST Not implemented"
+        ;;
+    *)
+        die 101 "Not implemented"
+        ;;
+    esac
 )}
 
 _CUT() {(
     use swine
-    die 101 "Not implemented"
+    use ason/lowlevel
+    structure="$1"; shift
+    type="$(_TYPE "$structure")"
+
+    case "$type" in
+    "$_LIST" )
+        die 101 "_CUT _LIST Not implemented"
+        ;;
+    *)
+        die 101 "Not implemented"
+        ;;
+    esac
 )}
 
 _CAT() {(
     use swine
-    die 101 "Not implemented"
+    use ason/lowlevel
+    structure="$1"; shift
+    type="$(_TYPE "$structure")"
+
+    case "$type" in
+    "$_LIST" )
+        die 101 "_CAT _LIST Not implemented"
+        ;;
+    *)
+        die 101 "Not implemented"
+        ;;
+    esac
 )}
 
 _APPEND() {(
     use swine
-    die 101 "Not implemented"
+    use ason/lowlevel
+    structure="$1"; shift
+    type="$(_TYPE "$structure")"
+
+    case "$type" in
+    "$_DICT" )
+        die 101 "_APPEND _DICT Not implemented"
+        ;;
+    *)
+        die 101 "Not implemented"
+        ;;
+    esac
 )}
 
 _SETROW() {(
