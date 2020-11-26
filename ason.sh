@@ -442,7 +442,9 @@ _SPLIT() {(
     separator="$1"; shift
     string="$1"; shift
     IFS="$separator" read -r -a words <<< "$string"
-    _LIST "${words[@]}"
+    # Ultra-safe bash array expansion
+    # https://gist.github.com/dimo414/2fb052d230654cc0c25e9e41a9651ebe
+    _LIST ${words[@]+"${words[@]}"}
 )}
 
 _FOLIATE() {(
