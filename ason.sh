@@ -207,9 +207,14 @@ _WIDTH() {(
     structure="$1"; shift
     type="$(_TYPE "$structure")"
 
-    [ "$type" = "$_TABLE" ] || die 101 "_WIDTH only defined for _TABLEs"
-
-    die 101 "Not implemented"
+    case "$type" in
+    "$_TABLE" )
+        die 101 "_WIDTH _TABLE not implemented"
+        ;;
+    *)
+        die 101 "Not implemented"
+        ;;
+    esac
 )}
 
 
