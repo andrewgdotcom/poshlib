@@ -211,8 +211,10 @@ __ason__end() {
 #
 # NOTE that $text is NOT a whole structure; just the htext, stext, or ftext.
 #
-# To truncate the text, the calling routine should invoke ${text#$result} AND
-# THEN ${text#$separator}, because the separator *may or may not* exist.
+# Detecting the end of the stext is the calling routine's responsibility!
+# The calling routine SHOULD invoke ${text#$result}, THEN test for empty, AND
+# THEN invoke ${text#$separator}, because a trailing separator means that
+# another value exists, but is the null string.
 
 __ason__to_next() {
     __ason__separator="$1"; shift
