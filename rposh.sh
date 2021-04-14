@@ -83,7 +83,7 @@ rscript() { (
             if catch e; then
                 # shellcheck disable=SC2154
                 warn "Error $e establishing connection to $target"
-                continue
+                return
             fi
         fi
 
