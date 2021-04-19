@@ -26,6 +26,8 @@ rscript() { (
     host_list="$1"; shift
     command="$1"; shift
 
+    error_log=""
+
     ssh_options=("-o" "ControlPersist=${RPOSH_SSH_KEEPALIVE:-60}" \
         "-o" "ControlMaster=auto")
 
@@ -103,7 +105,10 @@ rscript() { (
             "$target" "${pre_command[@]}" "$remote_tmpdir/command" \
             $(printf ' %q' "$@") >> "$stdout_dev" 2>> "$stderr_dev"
         if catch e; then
-            warn "Error $e running command on $target"
+            error_report="Error $e running command on $target"
+            warn "$error_report"
+            error_log="$error_log
+$error_report"
         fi
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: command complete"
 
@@ -131,5 +136,10 @@ rscript() { (
     try job_pool_shutdown
     if catch e; then
         warn "Error $e shutting down threadpool"
+    fi
+
+    # throw any deferred errors
+    if [[ -n "$error_log" ]]; then
+        die 1 "$error_log"
     fi
 ) }
