@@ -105,10 +105,7 @@ rscript() { (
             "$target" "${pre_command[@]}" "$remote_tmpdir/command" \
             $(printf ' %q' "$@") >> "$stdout_dev" 2>> "$stderr_dev"
         if catch e; then
-            error_report="Error $e running command on $target"
-            warn "$error_report"
-            error_log="$error_log
-$error_report"
+            die 1 "Error $e running command on $target"
         fi
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: command complete"
 
@@ -137,9 +134,5 @@ $error_report"
     if catch e; then
         warn "Error $e shutting down threadpool"
     fi
-
-    # throw any deferred errors
-    if [[ -n "$error_log" ]]; then
-        die 1 "$error_log"
-    fi
+    exit $job_pool_nerrors
 ) }
