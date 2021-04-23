@@ -101,12 +101,9 @@ rscript() { (
             "$tmpdir/command" "${target}:${remote_tmpdir}/command"
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: remote_command=${pre_command[*]} $remote_tmpdir/command"
         # shellcheck disable SC2046
-        try ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
+        ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
             "$target" "${pre_command[@]}" "$remote_tmpdir/command" \
             $(printf ' %q' "$@") >> "$stdout_dev" 2>> "$stderr_dev"
-        if catch e; then
-            die 1 "Error $e running command on $target"
-        fi
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: command complete"
 
         if [ -z "${RPOSH_SSH_KEEPALIVE:-}" ] || [ -z "${XDG_RUNTIME_DIR:-}" ]; then
