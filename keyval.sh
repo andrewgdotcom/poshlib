@@ -23,9 +23,9 @@ keyval-read() {(
     key="${1:-}"
 
     if [ -n "$key" ]; then
-        egrep "^\s*${key}=" "$filename" || true
+        grep -E "^\\s*${key}=" "$filename" || true
     else
-        egrep "^\s*[][A-Za-z0-9_]=" "$filename" || true
+        grep -E "^\\s*[][A-Za-z0-9_]=" "$filename" || true
     fi
 )}
 
@@ -33,6 +33,7 @@ keyval-add() {(
     use swine
     use parse-opt
 
+    # shellcheck disable=SC2034
     PO_SIMPLE_FLAGS="QUOTE UPDATE"
     eval "$(parse-opt-simple)"
 
@@ -42,11 +43,11 @@ keyval-add() {(
 
     # process $val for regex-escapes, quotes
 
-    if ! egrep -q "^\s*${key}=" "$filename"; then
+    if ! grep -E -q "^\\s*${key}=" "$filename"; then
         say "${key}=${val}" >> "$filename"
     elif [ "${UPDATE:-}" != "false" ]; then
         # Don't use sed -E because that interprets [] and these may appear on LHS
-        sed -i -e "s/^\(\s*${key}=\).*$/\1${val}/" "$filename"
+        sed -i -e "s/^\\(\\s*${key}=\\).*$/\\1${val}/" "$filename"
     fi
 )}
 
@@ -54,6 +55,7 @@ keyval-update() {(
     use swine
     use parse-opt
 
+    # shellcheck disable=SC2034
     PO_SIMPLE_FLAGS="QUOTE ADD"
     eval "$(parse-opt-simple)"
 
@@ -64,8 +66,8 @@ keyval-update() {(
     # process $val for regex-escapes, quotes
 
     # Don't use sed -E because that interprets [] and these may appear on LHS
-    sed -i -e "s/^\(\s*${key}=\).*$/\1${val}/" "$filename"
-    if [ "${ADD:-}" != "false" ] && ! egrep -q "^\s*${key}=" "$filename"; then
+    sed -i -e "s/^\\(\\s*${key}=\\).*$/\\1${val}/" "$filename"
+    if [ "${ADD:-}" != "false" ] && ! grep -E -q "^\\s*${key}=" "$filename"; then
         say "${key}=${val}" >> "$filename"
     fi
 )}
@@ -74,6 +76,7 @@ keyval-delete() {(
     use swine
     use parse-opt
 
+    # shellcheck disable=SC2034
     PO_SIMPLE_FLAGS="COMMENT"
     eval "$(parse-opt-simple)"
 
@@ -82,8 +85,8 @@ keyval-delete() {(
 
     if [ "${COMMENT:-}" == "true" ]; then
         # comment out instead of deleting
-        sed -i -e "s/^\s*${key}=/#&/" "$filename"
+        sed -i -e "s/^\\s*${key}=/#&/" "$filename"
     else
-        sed -i -e "/^\s*${key}=.*$/d" "$filename"
+        sed -i -e "/^\\s*${key}=.*$/d" "$filename"
     fi
 )}
