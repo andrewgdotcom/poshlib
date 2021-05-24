@@ -1,0 +1,45 @@
+#!/bin/bash
+
+SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
+# shellcheck disable=SC1090
+. "${SCRIPT_DIR}/../poshlib.sh" || exit 1
+use swine
+use keyval
+
+tmpfile=$(mktemp)
+
+cat <<EOF > "$tmpfile"
+FOO=foo
+EOF
+
+[[ "$(keyval-read "$tmpfile" FOO)" == "FOO=foo" ]]
+
+keyval-add "$tmpfile" BAR bar1
+out="$(keyval-read "$tmpfile" BAR)"
+warn "\"$out\" == \"BAR=bar1\""
+[[ "$out" == "BAR=bar1" ]]
+
+keyval-add --no-update "$tmpfile" BAR bar2
+out="$(keyval-read "$tmpfile" BAR)"
+warn "\"$out\" == \"BAR=bar1\""
+[[ "$out" == "BAR=bar1" ]]
+
+keyval-add "$tmpfile" BAR bar3
+out="$(keyval-read "$tmpfile" BAR)"
+warn "\"$out\" == \"BAR=bar3\""
+[[ "$out" == "BAR=bar3" ]]
+
+keyval-update "$tmpfile" BAR bar4
+out="$(keyval-read "$tmpfile" BAR)"
+warn "\"$out\" == \"BAR=bar4\""
+[[ "$out" == "BAR=bar4" ]]
+
+keyval-update --no-add "$tmpfile" WIBBLE wibble
+out="$(keyval-read "$tmpfile" WIBBLE)"
+warn "\"$out\" == \"\""
+[[ "$out" == "" ]]
+
+keyval-delete "$tmpfile" BAR
+out="$(keyval-read "$tmpfile" BAR)"
+warn "\"$out\" == \"\""
+[[ "$out" == "" ]]
