@@ -17,13 +17,12 @@
 
 keyval-read() {(
     use swine
-    use parse-opt
 
     filename="$1"; shift
     key="${1:-}"
 
     if [ -n "$key" ]; then
-        grep -E "^\\s*${key}=" "$filename" || true
+        grep "^\\s*${key}=" "$filename" || true
     else
         grep -E "^\\s*[][A-Za-z0-9_]=" "$filename" || true
     fi
@@ -43,8 +42,17 @@ keyval-add() {(
 
     # process $val for regex-escapes, quotes
 
-    if ! grep -E -q "^\\s*${key}=" "$filename"; then
-        say "${key}=${val}" >> "$filename"
+    if ! grep -q "^\\s*${key}=" "$filename"; then
+        if grep -q "^\\s*#\\s*${key}=" "$filename"; then
+            # Add above the first existing comment if it exists
+            # Don't use sed -E because that interprets [] and these may appear on LHS
+            # https://stackoverflow.com/a/33416489
+            # This matches the first instance, replaces using a repeat regex, then
+            # enters an inner loop that consumes the rest of the file verbatim
+            sed -i -e "/^\\(\\s*\\)#\\(\\s*${key}=\\)/ {s//\\1\\2${val}\\n\\1#\\2/; " -e ':a' -e '$!{n;ba' -e '};}' "$filename"
+        else
+            say "${key}=${val}" >> "$filename"
+        fi
     elif [ "${UPDATE:-}" != "false" ]; then
         # Don't use sed -E because that interprets [] and these may appear on LHS
         sed -i -e "s/^\\(\\s*${key}=\\).*$/\\1${val}/" "$filename"
