@@ -46,16 +46,41 @@ ANSI_BW=$'\033[0;97m'
 
 # Additional attributes. These DO NOT include an ANSI_RST, so are cumulative.
 
-# Bold
+# Weight
 ANSI_bo=$'\033[1m'
-# Faint
 ANSI_ft=$'\033[2m'
+ANSI_nbo=$'\033[22m'
+
+# Italic
+ANSI_it=$'\033[3m'
+ANSI_nit=$'\033[23m'
+
 # Underline
 ANSI_ul=$'\033[4m'
+ANSI_dul=$'\033[21m'
+ANSI_nul=$'\033[24m'
+
 # Blink
 ANSI_bl=$'\033[5m'
+ANSI_fbl=$'\033[6m'
+ANSI_nbl=$'\033[25m'
+
+# Inverse video
+ANSI_iv=$'\033[7m'
+ANSI_niv=$'\033[27m'
+
+# Conceal
+ANSI_co=$'\033[8m'
+ANSI_nco=$'\033[28m'
+
 # Strikeout
 ANSI_so=$'\033[9m'
+ANSI_nso=$'\033[29m'
+
+# Overline
+ANSI_ol=$'\033[53m'
+ANSI_nol=$'\033[55m'
+
 
 # Background colour
 ANSI_Kbg=$'\033[40m'
