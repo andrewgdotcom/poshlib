@@ -76,26 +76,60 @@ use-from <path>
 
 This prepends the given path to the module search path. Relative paths are relative to the script location. The default search path contains the directory from which poshlib.sh has been sourced.
 
-### Standard routines
 
-The standard routines defined by poshlib are:
+## Optional modules
 
-* use
-* use-from
-* detect_shell
-* declare_main
+### ansi - macro definitions for ANSI terminal formatting
 
-`detect_shell` will attempt to detect the calling shell, and will print one of `bash`, `dash`, `ksh93`, `zsh5` on STDOUT.
+See ansi.sh for a full list of formatting macros
 
-`declare_main` can be used to make a script dual-purpose, i.e. it can be sourced with `use` or it can be executed directly. To avail of this, all its functionality should be contained within shell functions, and then the main function should be declared at the bottom of the file thus:
+### ason - serialisation and deserialisation routines
+
+ASON is a lightweight serialisation format which enables complex data structures
+to be passed as strings. It requires no helper programs other than sed/awk.
+
+Currently only LIST types are implemented. See ason.sh for usage details.
+
+### flatten - convert a poshlib script with `use` dependencies into a flat script
+
+It defines one function, which prints the flattened script on STDOUT:
+
+* flatten "$script"
+
+This is useful if you want to pass a poshlib script to a non-poshlib-aware tool, e.g. ansible.
+
+### job-pool - simple parallelisation tool
+
+This defines four functions:
+
+* job_pool_init "$pool_size" "$echo"
+* job_pool_run "$command" ["$arg1" ...]
+* job_pool_wait
+* job_pool_shutdown
+
+They should be always be invoked in the sequence above. $pool_size is the number of workers, and $echo is "0" for silence or "1" otherwise.
+
+### keyval - tool to (more) safely read key-value pairs from shell-script-like files
+
+It defines four CRUD functions to manipulate shell-like variable definitions in arbitrary files:
+
+* eval $(keyval-read "$file" [KEY])
+* keyval-add [--quote] [--update] "$file" KEY "$value"
+* keyval-update [--quote] [--add] "$file" KEY "$value"
+* keyval-delete [--comment] "$file" KEY
+
+It only supports scalar values, not arrays or hashes.
+Note that `keyval-read` must be `eval`ed in order to manipulate variables in the calling environment.
+
+### main - make a `use`-able script executable
+
+`main` can be used to make a script dual-purpose, i.e. it can be sourced with `use` or it can be executed directly. To avail of this, all its functionality should be contained within shell functions, and then the main function should be declared at the bottom of the file thus:
 
 ```
-declare_main main_function "$@"
+main main_function "$@"
 ```
 
 This statement will invoke `main_function` with the script arguments IFF the script has been executed. If the script has been sourced or used, then it will do nothing and it is the responsibility of the sourcing script to invoke any functions at a later point.
-
-## Optional modules
 
 ### parse-opt - routines for parsing GNU-style longopts
 
@@ -105,20 +139,33 @@ The full-featured version is:
 
 ```
 eval "$(parse-opt-init)"
+PO_SHORT_MAP[...]= ...
+PO_SHORT_MAP[...]= ...
+PO_LONG_MAP[...]= ...
+PO_LONG_MAP[...]= ...
 eval "$(parse-opt)"
 ```
 
-You must populate the associative arrays PO_SHORT_OPTIONS and PO_LONG_OPTIONS after `eval "$(parse-opt-init)"` and before `eval "$(parse-opt)"`. The named variables are initialised with the arguments to their corresponding command line flags. The options are excised from ARGV leaving only positional arguments.
+The associative arrays PO_SHORT_MAP and PO_LONG_MAP denote mappings between command-line flags and environment variables into which the values of the parameters are stored. The command-line flags are excised from ARGV leaving only positional arguments.
 
 Alternatively one can use a simplified system, at the cost of flexibility:
 
 ```
+PO_SIMPLE_PREFIX= ...
+PO_SIMPLE_PARAMS= ...
+PO_SIMPLE_FLAGS= ...
 eval "$(parse-opt-simple)"
 ```
 
-This automatically creates the mappings between options and variables, however it is not possible to specify default values or short options using this method.
+This automatically creates the mappings between options and variables (so that e.g. the value of the parameter --foo-bar is stored in the environment variable FOO_BAR), however it is not possible to specify default values or short options using this method.
 
 See the comments at the top of parse-opt.sh for full usage instructions.
+
+### rposh - run a poshlib script with `use` dependencies on a remote environment
+
+This requires a version of ssh(1) that supports ControlMaster.
+
+* rscript "$host" "$script"
 
 ### swine - make bash a little bit more like perl
 
@@ -137,25 +184,6 @@ This module sets some shell option defaults to make it more like perl's `strict`
 
 Note that try works by calling `eval` on its arguments, so they should be
 quoted accordingly. It does not work well for complex commands, subshells etc.
-
-### flatten - convert a poshlib script with `use` dependencies into a flat script
-
-It defines one function, which prints the flattened script on STDOUT:
-
-* flatten "$script"
-
-### rposh - run a poshlib script with `use` dependencies on a remote environment
-
-This requires a version of ssh(1) that supports ControlMaster.
-
-* rscript "$host" "$script"
-
-### ason - serialisation and deserialisation routines
-
-ASON is a lightweight serialisation format which enables complex data structures
-to be passed as strings. It requires no helper programs other than sed/awk.
-
-Currently only LIST types are implemented. See ason.sh for usage details.
 
 ## Notes
 
