@@ -22,10 +22,14 @@ keyval-read() {(
     key="${1:-}"
 
     if [ -n "$key" ]; then
-        grep "^\\s*${key}=" "$filename" || true
+        regex="^\\s*${key}(\[[A-Za-z0-9_]+\])?="
     else
-        grep -E "^\\s*[][A-Za-z0-9_]=" "$filename" || true
+        regex="^\\s*[][A-Za-z0-9_]+="
     fi
+    ( grep -E "$regex" "$filename" || true ) | while IFS=$'\n' read -r line; do
+        [ -n "$line" ] || continue
+        printf "%s=%q\n" "${line%%=*}" "${line#*=}"
+    done
 )}
 
 keyval-add() {(
@@ -54,6 +58,7 @@ keyval-add() {(
             say "${key}=${val}" >> "$filename"
         fi
     elif [ "${UPDATE:-}" != "false" ]; then
+        key=$(sed -E -e 's/([][])/\\\1/g' <<< "$key")
         # Don't use sed -E because that interprets [] and these may appear on LHS
         sed -i -e "s/^\\(\\s*${key}=\\).*$/\\1${val}/" "$filename"
     fi
@@ -68,7 +73,7 @@ keyval-update() {(
     eval "$(parse-opt-simple)"
 
     filename="$1"; shift
-    key="$1"; shift
+    key=$(sed -E -e 's/([][])/\\\1/g' <<< "$1"); shift
     val="${1:-}"
 
     # process $val for regex-escapes, quotes
@@ -89,12 +94,12 @@ keyval-delete() {(
     eval "$(parse-opt-simple)"
 
     filename="$1"; shift
-    key="$1"
+    key=$(sed -E -e 's/([][])/\\\1/g' <<< "$1")
 
     if [ "${COMMENT:-}" == "true" ]; then
         # comment out instead of deleting
-        sed -i -e "s/^\\s*${key}=/#&/" "$filename"
+        sed -E -i -e "s/^\\s*${key}(\[[A-Za-z0-9_]+\])?=/#&/" "$filename"
     else
-        sed -i -e "/^\\s*${key}=.*$/d" "$filename"
+        sed -E -i -e "/^\\s*${key}(\[[A-Za-z0-9_]+\])?=.*$/d" "$filename"
     fi
 )}

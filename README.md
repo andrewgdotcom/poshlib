@@ -114,11 +114,15 @@ They should be always be invoked in the sequence above. $pool_size is the number
 It defines four CRUD functions to manipulate shell-like variable definitions in arbitrary files:
 
 * eval $(keyval-read "$file" [KEY])
-* keyval-add [--quote] [--update] "$file" KEY "$value"
-* keyval-update [--quote] [--add] "$file" KEY "$value"
+* keyval-add [--quote] [--no-update] "$file" KEY "$value"
+* keyval-update [--quote] [--no-add] "$file" KEY "$value"
 * keyval-delete [--comment] "$file" KEY
 
-It only supports scalar values, not arrays or hashes.
+`keyval-add` and `keyval-update` can only operate on individual array or hash elements using the format `ARRAY[index]`.
+There is (currently) no option to write an entire array or hash to a file (TODO).
+`keyval-delete` can operate on individual elements or entire arrays.
+`keyval-read` can only read arrays or hashes in bulk; use shell parameter expansion to get individual elements.
+
 Note that `keyval-read` must be `eval`ed in order to manipulate variables in the calling environment.
 
 ### main - make a `use`-able script executable

@@ -10,9 +10,12 @@ tmpfile=$(mktemp)
 
 cat <<EOF > "$tmpfile"
 FOO=foo
+FOO2=foo2
 EOF
 
-[[ "$(keyval-read "$tmpfile" FOO)" == "FOO=foo" ]]
+warn "$(keyval-read "$tmpfile")"
+eval $(keyval-read "$tmpfile")
+[[ "$FOO" == "foo" ]]
 
 keyval-add "$tmpfile" BAR bar1
 out="$(keyval-read "$tmpfile" BAR)"
@@ -41,5 +44,34 @@ warn "\"$out\" == \"\""
 
 keyval-delete "$tmpfile" BAR
 out="$(keyval-read "$tmpfile" BAR)"
+warn "\"$out\" == \"\""
+[[ "$out" == "" ]]
+
+# Handling of special characters
+val="bar1\$foo bar=!!"
+keyval-add "$tmpfile" BAR "$val"
+eval $(keyval-read "$tmpfile" BAR)
+warn "\"$BAR\" == \"$val\""
+[[ "$BAR" == "$val" ]]
+
+# Array handling
+keyval-add "$tmpfile" "ARRAY[key]" arrayval
+out="$(keyval-read "$tmpfile" ARRAY)"
+warn "\"$out\" == \"ARRAY[key]=arrayval\""
+[[ "$out" == "ARRAY[key]=arrayval" ]]
+
+keyval-update "$tmpfile" "ARRAY[key3]" arrayval3
+keyval-delete "$tmpfile" "ARRAY[key3]"
+out="$(keyval-read "$tmpfile" ARRAY)"
+warn "\"$out\" == \"ARRAY[key]=arrayval\""
+[[ "$out" == "ARRAY[key]=arrayval" ]]
+
+keyval-update "$tmpfile" "ARRAY[key]" arrayval2
+out="$(keyval-read "$tmpfile" ARRAY)"
+warn "\"$out\" == \"ARRAY[key]=arrayval2\""
+[[ "$out" == "ARRAY[key]=arrayval2" ]]
+
+keyval-delete "$tmpfile" ARRAY
+out="$(keyval-read "$tmpfile" ARRAY)"
 warn "\"$out\" == \"\""
 [[ "$out" == "" ]]
