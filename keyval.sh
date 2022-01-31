@@ -15,6 +15,11 @@
 # variable settings are desired.
 ################################################################################
 
+_sedescape() {
+    # Escape any characters likely to confuse sed
+    sed -E -e 's/([][\\&.])/\\\1/g' <<< "$1"
+}
+
 keyval-read() {(
     use swine
     use parse-opt
@@ -56,8 +61,8 @@ keyval-add() {(
     key="$1"; shift
     val="${1:-}"
 
-    keyquote=$(sed -E -e 's/([][\\])/\\\1/g' <<< "$key")
-    valquote=$(sed -E -e 's/([][\\])/\\\1/g' <<< "$val")
+    keyquote=$(_sedescape "$key")
+    valquote=$(_sedescape "$val")
 
     if ! grep -q "^\\s*${keyquote}=" "$filename"; then
         if grep -q "^\\s*#\\s*${keyquote}=" "$filename"; then
@@ -86,8 +91,8 @@ keyval-update() {(
     key="$1"; shift
     val="${1:-}"
 
-    keyquote=$(sed -E -e 's/([][\\])/\\\1/g' <<< "$key")
-    valquote=$(sed -E -e 's/([][\\])/\\\1/g' <<< "$val")
+    keyquote=$(_sedescape "$key")
+    valquote=$(_sedescape "$val")
 
     sed -i -e "s/^\\(\\s*${keyquote}=\\).*$/\\1${valquote}/" "$filename"
     if [ "${ADD:-}" != "false" ] && ! grep -E -q "^\\s*${keyquote}=" "$filename"; then
@@ -104,7 +109,7 @@ keyval-delete() {(
     eval "$(parse-opt-simple)"
 
     filename="$1"; shift
-    keyquote=$(sed -E -e 's/([][\\])/\\\1/g' <<< "$1")
+    keyquote=$(_sedescape "$1")
 
     if [ "${COMMENT:-}" == "true" ]; then
         # comment out instead of deleting

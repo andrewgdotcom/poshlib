@@ -119,7 +119,7 @@ It defines four CRUD functions to manipulate shell-like variable definitions in 
 * keyval-delete [--comment] "$file" KEY
 
 `KEY` may be a simple variable name, or an array member in the form `ARRAY[index]`.
-(BEWARE that special characters in hash indexes are not thoroughly tested and may not work as expected)
+(BEWARE that for safety reasons hash indexes MUST NOT contain special characters; unexpected behaviour may result)
 
 `keyval-add` and `keyval-update` can operate on individual array or hash elements using the format `ARRAY[index]=VALUE`.
 There is (currently) no support for serialising an entire array or hash to a file in one command.
