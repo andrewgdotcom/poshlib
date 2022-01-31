@@ -8,38 +8,120 @@ use keyval
 
 tmpfile=$(mktemp)
 
+VERBOSE=""
+if [[ "${1:-}" == "--verbose" ]]; then
+    VERBOSE=true
+fi
+
+# Simple read
+
 cat <<EOF > "$tmpfile"
-FOO=foo
+READ1=1
+READ2=2
 EOF
 
-[[ "$(keyval-read "$tmpfile" FOO)" == "FOO=foo" ]]
+eval $(keyval-read "$tmpfile")
+[[ "$READ1" == "1" ]]
+[[ "$READ2" == "2" ]]
 
-keyval-add "$tmpfile" BAR bar1
-out="$(keyval-read "$tmpfile" BAR)"
-warn "\"$out\" == \"BAR=bar1\""
-[[ "$out" == "BAR=bar1" ]]
 
-keyval-add --no-update "$tmpfile" BAR bar2
-out="$(keyval-read "$tmpfile" BAR)"
-warn "\"$out\" == \"BAR=bar1\""
-[[ "$out" == "BAR=bar1" ]]
+# Updates
 
-keyval-add "$tmpfile" BAR bar3
-out="$(keyval-read "$tmpfile" BAR)"
-warn "\"$out\" == \"BAR=bar3\""
-[[ "$out" == "BAR=bar3" ]]
+keyval-add "$tmpfile" UPDATE 1
+out="$(keyval-read "$tmpfile" UPDATE)"
+[[ ! $VERBOSE ]] || warn "\"$out\" == \"UPDATE=1\""
+[[ "$out" == "UPDATE=1" ]]
 
-keyval-update "$tmpfile" BAR bar4
-out="$(keyval-read "$tmpfile" BAR)"
-warn "\"$out\" == \"BAR=bar4\""
-[[ "$out" == "BAR=bar4" ]]
+keyval-add --no-update "$tmpfile" UPDATE 2
+out="$(keyval-read "$tmpfile" UPDATE)"
+[[ ! $VERBOSE ]] || warn "\"$out\" == \"UPDATE=1\""
+[[ "$out" == "UPDATE=1" ]]
 
-keyval-update --no-add "$tmpfile" WIBBLE wibble
-out="$(keyval-read "$tmpfile" WIBBLE)"
-warn "\"$out\" == \"\""
+keyval-add "$tmpfile" UPDATE 3
+out="$(keyval-read "$tmpfile" UPDATE)"
+[[ ! $VERBOSE ]] || warn "\"$out\" == \"UPDATE=3\""
+[[ "$out" == "UPDATE=3" ]]
+
+keyval-update "$tmpfile" UPDATE 4
+out="$(keyval-read "$tmpfile" UPDATE)"
+[[ ! $VERBOSE ]] || warn "\"$out\" == \"UPDATE=4\""
+[[ "$out" == "UPDATE=4" ]]
+
+keyval-update --no-add "$tmpfile" NOUPDATE 5
+out="$(keyval-read "$tmpfile" NOUPDATE)"
+[[ ! $VERBOSE ]] || warn "\"$out\" == \"\""
 [[ "$out" == "" ]]
 
-keyval-delete "$tmpfile" BAR
-out="$(keyval-read "$tmpfile" BAR)"
-warn "\"$out\" == \"\""
+keyval-delete "$tmpfile" UPDATE
+out="$(keyval-read "$tmpfile" UPDATE)"
+[[ ! $VERBOSE ]] || warn "\"$out\" == \"\""
+[[ "$out" == "" ]]
+
+
+# Handling of special characters
+val="a1\$a&.*(\"'{[]}) %b #c=!!\\[\n"
+keyval-add "$tmpfile" SPECIAL "$val"
+eval $(keyval-read "$tmpfile" SPECIAL)
+[[ ! $VERBOSE ]] || warn "\"$SPECIAL\" == \"$val\""
+[[ "$SPECIAL" == "$val" ]]
+
+keyval-update "$tmpfile" SPECIAL "$val"
+eval $(keyval-read "$tmpfile" SPECIAL)
+[[ ! $VERBOSE ]] || warn "\"$SPECIAL\" == \"$val\""
+[[ "$SPECIAL" == "$val" ]]
+
+keyval-delete "$tmpfile" SPECIAL
+out="$(keyval-read "$tmpfile" SPECIAL)"
+[[ ! $VERBOSE ]] || warn "\"$out\" == \"\""
+[[ "$out" == "" ]]
+
+
+# Quote-stripping
+val="'val'"
+keyval-add "$tmpfile" STRIP "$val"
+eval $(keyval-read "$tmpfile" STRIP)
+[[ ! $VERBOSE ]] || warn "\"$STRIP\" == \"val\""
+[[ "$STRIP" == "val" ]]
+
+eval $(keyval-read --no-strip "$tmpfile" STRIP)
+[[ ! $VERBOSE ]] || warn "\"$STRIP\" == \"$val\""
+[[ "$STRIP" == "$val" ]]
+
+# again with dquo
+val='"val"'
+keyval-update "$tmpfile" STRIP "$val"
+eval $(keyval-read "$tmpfile" STRIP)
+[[ ! $VERBOSE ]] || warn "\"$STRIP\" == \"val\""
+[[ "$STRIP" == "val" ]]
+
+eval $(keyval-read --no-strip "$tmpfile" STRIP)
+[[ ! $VERBOSE ]] || warn "\"$STRIP\" == \"$val\""
+[[ "$STRIP" == "$val" ]]
+
+keyval-delete "$tmpfile" STRIP
+out="$(keyval-read "$tmpfile" STRIP)"
+[[ ! $VERBOSE ]] || warn "\"$out\" == \"\""
+[[ "$out" == "" ]]
+
+
+# Array handling
+keyval-add "$tmpfile" "ARRAY[1]" 1
+out="$(keyval-read "$tmpfile" ARRAY)"
+[[ ! $VERBOSE ]] || warn "\"$out\" == \"ARRAY[1]=1\""
+[[ "$out" == "ARRAY[1]=1" ]]
+
+keyval-update "$tmpfile" "ARRAY[2]" 2
+keyval-delete "$tmpfile" "ARRAY[2]"
+out="$(keyval-read "$tmpfile" ARRAY)"
+[[ ! $VERBOSE ]] || warn "\"$out\" == \"ARRAY[1]=1\""
+[[ "$out" == "ARRAY[1]=1" ]]
+
+keyval-update "$tmpfile" "ARRAY[1]" 2
+out="$(keyval-read "$tmpfile" ARRAY)"
+[[ ! $VERBOSE ]] || warn "\"$out\" == \"ARRAY[1]=2\""
+[[ "$out" == "ARRAY[1]=2" ]]
+
+keyval-delete "$tmpfile" ARRAY
+out="$(keyval-read "$tmpfile" ARRAY)"
+[[ ! $VERBOSE ]] || warn "\"$out\" == \"\""
 [[ "$out" == "" ]]

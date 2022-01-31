@@ -113,13 +113,27 @@ They should be always be invoked in the sequence above. $pool_size is the number
 
 It defines four CRUD functions to manipulate shell-like variable definitions in arbitrary files:
 
-* eval $(keyval-read "$file" [KEY])
-* keyval-add [--quote] [--update] "$file" KEY "$value"
-* keyval-update [--quote] [--add] "$file" KEY "$value"
+* eval $(keyval-read [--no-strip] "$file" [KEY])
+* keyval-add [--no-update] "$file" KEY "$value"
+* keyval-update [--no-add] "$file" KEY "$value"
 * keyval-delete [--comment] "$file" KEY
 
-It only supports scalar values, not arrays or hashes.
-Note that `keyval-read` must be `eval`ed in order to manipulate variables in the calling environment.
+`KEY` may be a simple variable name, or an array member in the form `ARRAY[index]`.
+(BEWARE that for safety reasons hash indexes MUST NOT contain special characters; unexpected behaviour may result)
+
+`keyval-add` and `keyval-update` can operate on individual array or hash elements using the format `ARRAY[index]=VALUE`.
+There is (currently) no support for serialising an entire array or hash to a file in one command.
+Note that each will fall back on the other's behaviour unless `--no-add` or `--no-update` (as appropriate) is given.
+Therefore without `--no-*` they differ only in the order of operations tried.
+
+`keyval-delete` can operate on individual elements or entire arrays.
+If `--comment` is given entries in the file are commented out rather than deleted.
+
+`keyval-read` can only read arrays or hashes in bulk; use shell parameter expansion to get individual elements.
+Enclosing quotes around values will be silently stripped unless `--no-strip` is given.
+Note that the output of `keyval-read` must be `eval`ed in order to manipulate variables in the calling script.
+Reading a nonexistent key does not delete the corresponding variable, nor does reading an array remove non-matching members;
+if this behaviour is required, then the variable/array should be explicitly cleared before calling `keyval-read`.
 
 ### main - make a `use`-able script executable
 
