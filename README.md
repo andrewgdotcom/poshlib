@@ -147,7 +147,9 @@ This statement will invoke `main_function` with the script arguments IFF the scr
 
 ### parse-opt - routines for parsing GNU-style longopts
 
-This requires extended getopt(1). All of the functions *must* be invoked using `eval` in order to modify the calling script's ARGV.
+This requires extended getopt(1). This should be installed by default on any modern Linux. On macOS, it can be installed from MacPorts.
+
+All of the functions *must* be invoked using `eval` in order to modify the calling script's ARGV.
 
 The full-featured version is:
 
