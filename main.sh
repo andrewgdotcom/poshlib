@@ -16,7 +16,7 @@
 main() {
     [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: main ${*:-}" >&2
     # shellcheck disable=SC2154
-    if [ "$__posh__detected__shell" == "bash" ]; then
+    if [ "$__posh__detected__shell" == "bash" ] || [ "$__posh__detected__shell" == "bash3" ]; then
         # We expect to be in the second level of the bash call stack.
         # If we are any deeper, then the calling code is not at the top.
         # If it is not at the top, then it MUST NOT invoke a main function.

@@ -6,8 +6,8 @@ SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 ### detect_shell ###
 
 # shellcheck disable=SC2154
-if [ "${__posh__detected__shell:-}" != "bash" ]; then
-	echo "Shell not detected, expected 'bash' got '${__posh__detected__shell:-}'"
+if [ "${__posh__detected__shell:-}" != "bash" ] && [ "$__posh__detected__shell" != "bash3" ]; then
+	echo "Shell not detected, expected 'bash' or 'bash3', got '${__posh__detected__shell:-}'"
 	exit 1
 fi
 

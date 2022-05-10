@@ -12,7 +12,7 @@
 # Avoid reinitialization
 if [ "${__posh__callstack:-}" == "" ]; then
     # Shell detector stolen from https://www.av8n.com/computer/shell-dialect-detect
-    __posh__detected__shell="$( (
+    __posh__detected__shell=$( (
         # shellcheck disable=SC2034,SC2030
         res1=$(export PATH=/dev/null/$$
           type -p 2>/dev/null)
@@ -33,13 +33,14 @@ if [ "${__posh__callstack:-}" == "" ]; then
         done
 
         tag="${st1}.${penult}_${ult}"
-        case "${tag}" in
-         0.shell_builtin) echo bash  ; exit ;;
-           127.not_found) echo dash  ; exit ;;
-                  2.nil_) echo ksh93 ; exit ;;
-         1.reserved_word) echo zsh5  ; exit ;;
-        esac
-    ) )"
+        if   [ "${tag}" == 0.shell_builtin ]; then echo bash  ; exit
+        elif [ "${tag}" == 1.shell_builtin ]; then echo bash3 ; exit
+        elif [ "${tag}" ==   127.not_found ]; then echo dash  ; exit
+        elif [ "${tag}" ==          2.nil_ ]; then echo ksh93 ; exit
+        elif [ "${tag}" == 1.reserved_word ]; then echo zsh5  ; exit
+        else echo "unknown shell"
+        fi
+    ) )
     [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: detected shell=$__posh__detected__shell" >&2
 
     # Always clobber __posh__usepath to prevent shenanigans.
@@ -47,7 +48,10 @@ if [ "${__posh__callstack:-}" == "" ]; then
     # IFF we are using bash, we can initialise __posh__usepath automagically
     # with bashisms. Otherwise, we must invoke `use-from` in the calling script.
     # TODO: support other shells
-    if [ "$__posh__detected__shell" == "bash" ]; then
+    if [ "$__posh__detected__shell" == "unknown shell" ]; then
+        echo "Unknown shell; aborting" >&2
+        exit 101
+    elif [ "$__posh__detected__shell" == "bash" ] || [ "$__posh__detected__shell" == "bash3" ]; then
         __posh__usepath=$(dirname "$(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}")")
         [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: INIT usepath=$__posh__usepath" >&2
         # Initialize a callstack
@@ -101,7 +105,7 @@ __posh__prependpath() {
     local newpath="$1"; shift
     local stack="$1"; shift
     # make paths relative to script location, not PWD
-    if [ "$__posh__detected__shell" == "bash" ]; then
+    if [ "$__posh__detected__shell" == "bash" ] || [ "$__posh__detected__shell" == "bash3" ]; then
         stacktop_dir=$(dirname "${stack%%:*}")
         if [ "$newpath" == "." ]; then
             newpath="$stacktop_dir"

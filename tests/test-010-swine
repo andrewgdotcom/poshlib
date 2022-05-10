@@ -23,16 +23,19 @@ cat <<EOF >"$tempfile"
 #!/bin/bash
 . "$(dirname "${BASH_SOURCE[0]}")/../poshlib.sh" || exit 1
 use swine
-ls FILEDOESNOTEXIST 2>/dev/null
+ls /FILEDOESNOTEXIST 2>/dev/null
 EOF
-if output=$(/bin/bash "$tempfile" 2>&1); then
+ls /FILEDOESNOTEXIST 2>/dev/null || expected_error=$?
+if [ "$expected_error" == 0 ]; then
+    die 1 "failure in error handling: could not determine correct error code"
+elif output=$(/bin/bash "$tempfile" 2>&1); then
     die 1 "failure in error handling: died with no error"
 else
-    if [ "$?" != 2 ]; then
-	die 1 "failure in error handling: died with wrong error number"
+    if [ "$?" != "$expected_error" ]; then
+	die 1 "failure in error handling: died with wrong error number (expected $expected_error)"
     fi
 fi
-if [ "$output" != "errexit 2 on line 4 $tempfile" ]; then
+if [ "$output" != "errexit $expected_error on line 4 $tempfile" ]; then
     die 1 "failure in error handling: died with wrong error message ($output)"
 fi
 rm "$tempfile"
