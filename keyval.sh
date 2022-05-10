@@ -17,7 +17,7 @@
 
 _sedescape() {
     # Escape any characters likely to confuse sed
-    sed -E -e 's/([][\\&.])/\\\1/g' <<< "$1"
+    sed -E -e 's/([][\\&./])/\\\1/g' <<< "$1"
 }
 
 keyval-read() {(
