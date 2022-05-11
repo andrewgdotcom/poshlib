@@ -1,7 +1,26 @@
 # poshlib
-A posix shell utility library
+A POSIX shell utility library
 
-To include in your project, incant the following inside your git repo:
+This library adds modern programming-language features to POSIX shells.
+It depends on a small number of commonly installed POSIX tools:
+
+* sed
+* awk
+* getopt (extended)
+* ssh (ControlMaster support required, rposh module only)
+
+Note that extended getopt is not shipped with MacOS, and must be installed via e.g. MacPorts.
+
+Currently only Bash 4+ is well supported.
+
+
+## Installation
+
+Copy this entire tree into a subdirectory of your project and skip to "Usage" below.
+
+### Git submodule
+
+To include as a git submodule, incant the following inside your git repo:
 
 ```
 git submodule add https://github.com/andrewgdotcom/poshlib
@@ -45,20 +64,19 @@ git submodule sync --recursive
 git submodule update --init --recursive
 ```
 
-## Initialisation
+## Usage
 
-Source the `poshlib.sh` file at the top of your script. It is often useful to do this using a relative path. For example, if the poshlib repo is a sibling of the calling script, the following can be used:
+Source the `poshlib.sh` file at the top of your script.
+If your script will be bundled with its dependencies, it is recommended to do this using a constructed path.
+For example, if poshlib is installed in a sibling directory of the calling script, the following can be used:
 
 ```
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 . "$SCRIPT_DIR/poshlib/poshlib.sh" || exit 1
 ```
 
-NOTE that some poshlib routines (e.g. rscript) expect the second line above
-to be in a narrowly-defined format, otherwise they will fail to resolve the
-dependencies correctly (this avoids having to reimplement a shell parser).
-Please try not to deviate too far from the example form above, otherwise you
-may get errors of the form "Unexpected descent before init".
+NOTE that some poshlib routines (e.g. rscript) expect the second line above to be in a narrowly-defined format, otherwise they will fail to resolve the dependencies correctly (this avoids having to reimplement a shell parser).
+Please try not to deviate too far from the example form above, otherwise you may get errors of the form "Unexpected descent before init".
 
 You can now enable the individual modules with:
 
@@ -74,7 +92,9 @@ You can extend poshlib with your own modules:
 use-from <path>
 ```
 
-This prepends the given path to the module search path. Relative paths are relative to the script location. The default search path contains the directory from which poshlib.sh has been sourced.
+This prepends the given path to the module search path.
+Relative paths are relative to the script location.
+The default search path contains the directory from which poshlib.sh has been sourced.
 
 
 ## Optional modules
@@ -85,8 +105,7 @@ See ansi.sh for a full list of formatting macros
 
 ### ason - serialisation and deserialisation routines
 
-ASON is a lightweight serialisation format which enables complex data structures
-to be passed as strings. It requires no helper programs other than sed/awk.
+ASON is a lightweight serialisation format which enables complex data structures to be passed as strings.
 
 Currently only LIST types are implemented. See ason.sh for usage details.
 
@@ -107,14 +126,15 @@ This defines four functions:
 * job_pool_wait
 * job_pool_shutdown
 
-They should be always be invoked in the sequence above. $pool_size is the number of workers, and $echo is "0" for silence or "1" otherwise.
+They should be always be invoked in the sequence above.
+$pool_size is the number of workers, and $echo is "0" for silence or "1" otherwise.
 
 ### keyval - tool to (more) safely read key-value pairs from shell-script-like files
 
 It defines four CRUD functions to manipulate shell-like variable definitions in arbitrary files:
 
 * eval $(keyval-read [--no-strip] "$file" [KEY])
-* keyval-add [--no-update] "$file" KEY "$value"
+* keyval-add [--no-update] [--multi] "$file" KEY "$value"
 * keyval-update [--no-add] "$file" KEY "$value"
 * keyval-delete [--comment] "$file" KEY
 
@@ -126,28 +146,32 @@ There is (currently) no support for serialising an entire array or hash to a fil
 Note that each will fall back on the other's behaviour unless `--no-add` or `--no-update` (as appropriate) is given.
 Therefore without `--no-*` they differ only in the order of operations tried.
 
+If the option `--multi` is passed to `keyval-add` it will not overwrite any existing definition.
+This is useful for adding multiple entries for the same key in the same file (some tools treat this as a feature, e.g. rkhunter).
+`keyval-read` will output all matching entries separated by newlines, but the order is not well-defined so passing its output directly to `eval` will give unpredictable results.
+
 `keyval-delete` can operate on individual elements or entire arrays.
 If `--comment` is given entries in the file are commented out rather than deleted.
 
 `keyval-read` can only read arrays or hashes in bulk; use shell parameter expansion to get individual elements.
 Enclosing quotes around values will be silently stripped unless `--no-strip` is given.
 Note that the output of `keyval-read` must be `eval`ed in order to manipulate variables in the calling script.
-Reading a nonexistent key does not delete the corresponding variable, nor does reading an array remove non-matching members;
-if this behaviour is required, then the variable/array should be explicitly cleared before calling `keyval-read`.
+Reading a nonexistent key does not delete the corresponding variable, nor does reading an array remove non-matching members.
+If this behaviour is required, then the variable/array should be explicitly cleared before calling `keyval-read`.
 
 ### main - make a `use`-able script executable
 
-`main` can be used to make a script dual-purpose, i.e. it can be sourced with `use` or it can be executed directly. To avail of this, all its functionality should be contained within shell functions, and then the main function should be declared at the bottom of the file thus:
+`main` can be used to make a script dual-purpose, i.e. it can be sourced with `use` or it can be executed directly.
+To avail of this, all its functionality should be contained within shell functions, and then the main function should be declared at the bottom of the file thus:
 
 ```
 main main_function "$@"
 ```
 
-This statement will invoke `main_function` with the script arguments IFF the script has been executed. If the script has been sourced or used, then it will do nothing and it is the responsibility of the sourcing script to invoke any functions at a later point.
+This statement will invoke `main_function` with the script arguments IFF the script has been executed.
+If the script has been sourced or used, then it will do nothing and it is the responsibility of the sourcing script to invoke any functions at a later point.
 
 ### parse-opt - routines for parsing GNU-style longopts
-
-This requires extended getopt(1). This should be installed by default on any modern Linux. On macOS, it can be installed from MacPorts.
 
 All of the functions *must* be invoked using `eval` in order to modify the calling script's ARGV.
 
@@ -162,7 +186,8 @@ PO_LONG_MAP[...]= ...
 eval "$(parse-opt)"
 ```
 
-The associative arrays PO_SHORT_MAP and PO_LONG_MAP denote mappings between command-line flags and environment variables into which the values of the parameters are stored. The command-line flags are excised from ARGV leaving only positional arguments.
+The associative arrays PO_SHORT_MAP and PO_LONG_MAP denote mappings between command-line flags and environment variables into which the values of the parameters are stored.
+The command-line flags are excised from ARGV leaving only positional arguments.
 
 Alternatively one can use a simplified system, at the cost of flexibility:
 
@@ -198,9 +223,9 @@ This module sets some shell option defaults to make it more like perl's `strict`
 * contains "$string" "${values[@]}"
     * succeeds if a string is contained in an array or list of strings
 
-Note that try works by calling `eval` on its arguments, so they should be
-quoted accordingly. It does not work well for complex commands, subshells etc.
+Note that try works by calling `eval` on its arguments, so they should be quoted accordingly.
+It does not work reliably on complex commands, subshells etc.; a function should be defined if these are required.
 
 ## Notes
 
-* poshlib currently only works with bash, but it is intended to (eventually) also support other POSIX shells.
+* poshlib currently only works with bash 4/5, but it is intended to (eventually) also support other POSIX shells.
