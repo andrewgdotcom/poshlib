@@ -54,7 +54,7 @@ keyval-add() {(
     use parse-opt
 
     # shellcheck disable=SC2034
-    PO_SIMPLE_FLAGS="UPDATE"
+    PO_SIMPLE_FLAGS="UPDATE MULTI"
     eval "$(parse-opt-simple)"
 
     filename="$1"; shift
@@ -64,13 +64,17 @@ keyval-add() {(
     keyquote=$(_sedescape "$key")
     valquote=$(_sedescape "$val")
 
-    if ! grep -q "^\\s*${keyquote}=" "$filename"; then
-        if grep -q "^\\s*#\\s*${keyquote}=" "$filename"; then
-            # Add above the first existing comment if it exists
+    if ! grep -Eq "^\\s*${keyquote}=" "$filename" || [ "${MULTI:-}" == true ]; then
+        # Either there is no matching uncommented definition, or we don't care
+        if grep -Eq "^\\s*#\\s*${keyquote}=${valquote}\$" "$filename"; then
+            # Uncomment the existing commented-out line
+            sed -i -e "s/^\\s*#\\s*\\(\\s*${keyquote}=${valquote}\\)$/\\1/" "$filename"
+        elif grep -Eq "^\\s*#?\\s*${keyquote}=" "$filename"; then
+            # Add above the first existing line (commented or otherwise)
             # https://stackoverflow.com/a/33416489
             # This matches the first instance, replaces using a repeat regex, then
             # enters an inner loop that consumes the rest of the file verbatim
-            sed -i -e "/^\\(\\s*\\)#\\(\\s*${keyquote}=\\)/ {s//\\1\\2${valquote}\\n\\1#\\2/; " -e ':a' -e '$!{n;ba' -e '};}' "$filename"
+            sed -i -e "/^\\(\\s*\\)\\(#\?\\)\\(\\s*${keyquote}=\\)/ {s//\\1\\3${valquote}\\n\\1\\2\\3/; " -e ':a' -e '$!{n;ba' -e '};}' "$filename"
         else
             say "${key}=${val}" >> "$filename"
         fi
