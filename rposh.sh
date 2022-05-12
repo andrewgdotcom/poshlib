@@ -46,8 +46,8 @@ rscript() { (
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: pre_command=(${pre_command[*]})"
     fi
     tmpdir=$(mktemp -d)
-    flatten "$command" > "$tmpdir/command"
-    chmod +x "$tmpdir/command"
+    flatten "$command" > "$tmpdir/$command"
+    chmod +x "$tmpdir/$command"
     [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: ssh_options=(${ssh_options[*]})"
     [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: hosts=(${hosts[*]})"
 
@@ -98,11 +98,11 @@ rscript() { (
         remote_tmpdir=$(ssh "${ssh_options[@]}" \
             "-o" "ControlPath=$controlpath" -- "$target" "mktemp -d" </dev/null)
         scp -q -p "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
-            "$tmpdir/command" "${target}:${remote_tmpdir}/command"
-        [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: remote_command=${pre_command[*]} $remote_tmpdir/command"
-        # shellcheck disable SC2046
+            "$tmpdir/$command" "${target}:${remote_tmpdir}/$command"
+        [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: remote_command=${pre_command[*]} $remote_tmpdir/$command"
+        # shellcheck disable=SC2046
         ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
-            "$target" "${pre_command[@]}" "$remote_tmpdir/command" \
+            "$target" "${pre_command[@]}" "$remote_tmpdir/$command" \
             $(printf ' %q' "$@") >> "$stdout_dev" 2>> "$stderr_dev"
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: command complete"
 
