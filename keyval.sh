@@ -64,12 +64,12 @@ keyval-add() {(
     keyquote=$(_sedescape "$key")
     valquote=$(_sedescape "$val")
 
-    if ! grep -Eq "^\\s*${keyquote}=" "$filename" || [ "${MULTI:-}" == true ]; then
+    if ! grep -Eq "^\\s*${keyquote}=" "$filename" 2>/dev/null || [ "${MULTI:-}" == true ]; then
         # Either there is no matching uncommented definition, or we don't care
-        if grep -Eq "^\\s*#\\s*${keyquote}=${valquote}\$" "$filename"; then
+        if grep -Eq "^\\s*#\\s*${keyquote}=${valquote}\$" "$filename" 2>/dev/null; then
             # Uncomment the existing commented-out line
             sed -i -e "s/^\\s*#\\s*\\(\\s*${keyquote}=${valquote}\\)$/\\1/" "$filename"
-        elif grep -Eq "^\\s*#?\\s*${keyquote}=" "$filename"; then
+        elif grep -Eq "^\\s*#?\\s*${keyquote}=" "$filename" 2>/dev/null; then
             # Add above the first existing line (commented or otherwise)
             # https://stackoverflow.com/a/33416489
             # This matches the first instance, replaces using a repeat regex, then
