@@ -2,6 +2,6 @@
 # shellcheck disable=SC1090
 . "$(dirname "${BASH_SOURCE[0]}")/../poshlib.sh" || exit 1
 use swine
-use rposh
+use keyval
 
 $(basename "$0") "$@"

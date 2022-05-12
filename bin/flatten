@@ -4,4 +4,4 @@
 use swine
 use flatten
 
-flatten "$@"
+$(basename "$0") "$@"
