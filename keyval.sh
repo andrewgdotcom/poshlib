@@ -54,7 +54,7 @@ keyval-add() {(
     use parse-opt
 
     # shellcheck disable=SC2034
-    PO_SIMPLE_FLAGS="UPDATE MULTI"
+    PO_SIMPLE_FLAGS="UPDATE MULTI MATCH_INDENT"
     eval "$(parse-opt-simple)"
 
     filename="$1"; shift
@@ -68,13 +68,21 @@ keyval-add() {(
         # Either there is no matching uncommented key, or we don't care
         if grep -Eq "^\\s*#?\\s*${keyquote}=${valquote}\$" "$filename" 2>/dev/null; then
             # If an exact match exists (commented or otherwise), forcibly uncomment it
-            sed -i -e "s/^\\(\\s*\\)#\\(\\s*${keyquote}=${valquote}\\)$/\\1\\2/" "$filename"
+            if [ "${MATCH_INDENT:-}" == true ]; then
+                sed -i -e "s/^\\(\\s*\\)#\\(\\s*${keyquote}=${valquote}\\)$/\\1\\2/" "$filename"
+            else
+                sed -i -e "s/^\\s*#\\s*\\(${keyquote}=${valquote}\\)$/\\1/" "$filename"
+            fi
         elif grep -Eq "^\\s*#?\\s*${keyquote}=" "$filename" 2>/dev/null; then
             # Add above the first existing line (commented or otherwise)
             # https://stackoverflow.com/a/33416489
             # This matches the first instance, replaces using a repeat regex, then
             # enters an inner loop that consumes the rest of the file verbatim
-            sed -i -e "/^\\(\\s*\\)\\(#\?\\)\\(\\s*${keyquote}=\\)/ {s//\\1\\3${valquote}\\n\\1\\2\\3/; " -e ':a' -e '$!{n;ba' -e '};}' "$filename"
+            if [ "${MATCH_INDENT:-}" == true ]; then
+                sed -i -e "/^\\(\\s*\\)\\(#\?\\)\\(\\s*${keyquote}=\\)/ {s//\\1\\3${valquote}\\n\\1\\2\\3/; " -e ':a' -e '$!{n;ba' -e '};}' "$filename"
+            else
+                sed -i -e "/^\\(\\s*#\?\\s*\\)\\(${keyquote}=\\)/ {s//\\2${valquote}\\n\\1\\2/; " -e ':a' -e '$!{n;ba' -e '};}' "$filename"
+            fi
         else
             say "${key}=${val}" >> "$filename"
         fi
@@ -89,7 +97,7 @@ keyval-update() {(
     use parse-opt
 
     # shellcheck disable=SC2034
-    PO_SIMPLE_FLAGS="ADD"
+    PO_SIMPLE_FLAGS="ADD MATCH_INDENT"
     eval "$(parse-opt-simple)"
 
     filename="$1"; shift
@@ -101,7 +109,7 @@ keyval-update() {(
 
     sed -i -e "s/^\\(\\s*${keyquote}=\\).*$/\\1${valquote}/" "$filename"
     if [ "${ADD:-}" != "false" ] && ! grep -E -q "^\\s*${keyquote}=" "$filename"; then
-        keyval-add --no-update "$filename" "$key" "$val"
+        MATCH_INDENT="${MATCH_INDENT:-}" keyval-add --no-update "$filename" "$key" "$val"
     fi
 )}
 

@@ -134,8 +134,8 @@ $pool_size is the number of workers, and $echo is "0" for silence or "1" otherwi
 It defines four CRUD functions to manipulate shell-like variable definitions in arbitrary files:
 
 * eval $(keyval-read [--no-strip] "$file" [KEY])
-* keyval-add [--no-update] [--multi] "$file" KEY "$value"
-* keyval-update [--no-add] "$file" KEY "$value"
+* keyval-add [--no-update] [--multi] [--match-indent] "$file" KEY "$value"
+* keyval-update [--no-add] [--match-indent] "$file" KEY "$value"
 * keyval-delete [--comment] "$file" KEY
 
 `KEY` may be a simple variable name, or an array member in the form `ARRAY[index]`.
@@ -149,6 +149,9 @@ Therefore without `--no-*` they differ only in the order of operations tried.
 If the option `--multi` is passed to `keyval-add` it will not overwrite any existing definition.
 This is useful for adding multiple entries for the same key in the same file (some tools treat this as a feature, e.g. rkhunter).
 `keyval-read` will output all matching entries separated by newlines, but the order is not well-defined so passing its output directly to `eval` will give unpredictable results.
+
+If the option `--match-indent` is passed to `keyval-add` or `keyval-update` they will attempt to preserve leading whitespace when inserting or uncommenting lines.
+By default any new or uncommented lines will be left-justified, as leading whitespace is not universally supported.
 
 `keyval-delete` can operate on individual elements or entire arrays.
 If `--comment` is given entries in the file are commented out rather than deleted.
