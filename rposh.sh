@@ -27,6 +27,7 @@ rscript() { (
     command="$1"; shift
     base_command=$(basename "$command")
 
+    # shellcheck disable=SC2034
     error_log=""
 
     ssh_options=("-o" "ControlPersist=${RPOSH_SSH_KEEPALIVE:-60}" \
