@@ -132,5 +132,6 @@ rscript() { (
     if catch e; then
         warn "Error $e shutting down threadpool"
     fi
-    exit $job_pool_nerrors
+    # shellcheck disable=SC2154
+    exit "$job_pool_nerrors"
 ) }
