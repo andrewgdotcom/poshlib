@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090,SC1091
 . "${SCRIPT_DIR}/../poshlib.sh" || exit 1
 use swine
 use keyval
@@ -21,7 +21,7 @@ READ2=2
 #UPDATE=0
 EOF
 
-eval $(keyval-read "$tmpfile")
+eval "$(keyval-read "$tmpfile")"
 [[ ! $VERBOSE ]] || warn "\"READ1\" == \"1\""
 [[ "$READ1" == "1" ]]
 [[ ! $VERBOSE ]] || warn "\"READ2\" == \"2\""
@@ -80,12 +80,12 @@ out="$(keyval-read "$tmpfile" UPDATE)"
 # Handling of special characters
 val="a1\$a&.*(\"'{[]}) %b #c=!!\\[\n /"
 keyval-add "$tmpfile" SPECIAL "$val"
-eval $(keyval-read "$tmpfile" SPECIAL)
+eval "$(keyval-read "$tmpfile" SPECIAL)"
 [[ ! $VERBOSE ]] || warn "\"$SPECIAL\" == \"$val\""
 [[ "$SPECIAL" == "$val" ]]
 
 keyval-update "$tmpfile" SPECIAL "$val"
-eval $(keyval-read "$tmpfile" SPECIAL)
+eval "$(keyval-read "$tmpfile" SPECIAL)"
 [[ ! $VERBOSE ]] || warn "\"$SPECIAL\" == \"$val\""
 [[ "$SPECIAL" == "$val" ]]
 
@@ -98,22 +98,22 @@ out="$(keyval-read "$tmpfile" SPECIAL)"
 # Quote-stripping
 val="'val'"
 keyval-add "$tmpfile" STRIP "$val"
-eval $(keyval-read "$tmpfile" STRIP)
+eval "$(keyval-read "$tmpfile" STRIP)"
 [[ ! $VERBOSE ]] || warn "\"$STRIP\" == \"val\""
 [[ "$STRIP" == "val" ]]
 
-eval $(keyval-read --no-strip "$tmpfile" STRIP)
+eval "$(keyval-read --no-strip "$tmpfile" STRIP)"
 [[ ! $VERBOSE ]] || warn "\"$STRIP\" == \"$val\""
 [[ "$STRIP" == "$val" ]]
 
 # again with dquo
 val='"val"'
 keyval-update "$tmpfile" STRIP "$val"
-eval $(keyval-read "$tmpfile" STRIP)
+eval "$(keyval-read "$tmpfile" STRIP)"
 [[ ! $VERBOSE ]] || warn "\"$STRIP\" == \"val\""
 [[ "$STRIP" == "val" ]]
 
-eval $(keyval-read --no-strip "$tmpfile" STRIP)
+eval "$(keyval-read --no-strip "$tmpfile" STRIP)"
 [[ ! $VERBOSE ]] || warn "\"$STRIP\" == \"$val\""
 [[ "$STRIP" == "$val" ]]
 

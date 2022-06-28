@@ -1,4 +1,4 @@
-# shellcheck disable=SC2148
+# shellcheck disable=SC2148,SC2034
 ########################################################################
 #
 # Standard(ish) set of ANSI SGR macros for terminal colours etc.

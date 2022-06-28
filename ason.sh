@@ -33,15 +33,21 @@ _REVEAL() {(
     # First substitute structure characters
     for entityvar in __AS__SOH __AS__STX __AS__ETX __AS__EOT \
             __AS__FS __AS__GS __AS__RS __AS__US; do
+# THIS IS JUST TO MAKE SHELLCHECK SHUT UP, BUT SHELLCHECK IS RIGHT
+# shellcheck disable=SC2001
         string=$(sed "s/${!entityvar}/\\$\\{${entityvar}\\}/g" <<< "$string")
     done
 
     # Now find and substitute any _TC7_TC7 sequences
+# THIS IS JUST TO MAKE SHELLCHECK SHUT UP, BUT SHELLCHECK IS RIGHT
+# shellcheck disable=SC2001
     string=$(sed "s/${__AS__SEQ_INIT}${__AS__SEQ_INIT}[${__AS__SEQ_INIT}${_UNDEF}${_TRUE}${_FALSE}${_PAD}${_PARA}]*/\\$\\{__UNSUPPORTED_SEQUENCE__\\}/g" <<< "$string")
 
     # substitute the longer entities first, to prevent partial matches
     for entityvar in _QUOTE _LIST _DICT _TABLE _ARRAY \
             _UNDEF _TRUE _FALSE _PAD _PARA; do
+# THIS IS JUST TO MAKE SHELLCHECK SHUT UP, BUT SHELLCHECK IS RIGHT
+# shellcheck disable=SC2001
         string=$(sed "s/${!entityvar}/\\$\\{${entityvar}\\}/g" <<< "$string")
     done
     printf "%s" "$string"
@@ -113,14 +119,14 @@ _DICT() {(
         while [ -z "$last" ]; do
             key="$(__ason__to_next "$__AS__US" "$keys")"
             # remove the found item and any subsequent separator
-            keys="${keys#$key}"
+            keys="${keys#"$key"}"
             [ -n "$keys" ] || last=1
-            keys="${keys#$__AS__US}"
+            keys="${keys#"$__AS__US"}"
             value="$(__ason__to_next "$__AS__US" "$values")"
             # remove the found item and any subsequent separator
-            values="${values#$value}"
+            values="${values#"$value"}"
             [ -n "$values" ] || last=1
-            values="${values#$__AS__US}"
+            values="${values#"$__AS__US"}"
             if [ -z "$start" ]; then
                 printf "%s" "$__AS__RS"
             else
@@ -189,9 +195,9 @@ _LENGTH() {(
             item="$(__ason__to_next "$separator" "$stext")"
             [ "$item" != "$_UNDEF" ] || break
             (( ++count ))
-            stext="${stext#$item}"
+            stext="${stext#"$item"}"
             [ -n "$stext" ] || break
-            stext="${stext#$separator}"
+            stext="${stext#"$separator"}"
         done
         printf "%s" "$count"
         ;;
@@ -261,9 +267,9 @@ _GET() {(
             item="$(__ason__to_next "$__AS__US" "$stext")"
             (( ++count ))
             # remove the found item and any subsequent separator
-            stext="${stext#$item}"
+            stext="${stext#"$item"}"
             [ -n "$stext" ] || break
-            stext="${stext#$__AS__US}"
+            stext="${stext#"$__AS__US"}"
         done
         if [ "$count" = "$subscript" ]; then
             printf "%s" "$(__ason__unpad "$item")"
@@ -319,9 +325,9 @@ _READ() {(
         while true; do
             item=$(__ason__to_next "$__AS__US" "$stext")
             printf " %q" "$(__ason__unpad "$item")"
-            stext="${stext#$item}"
+            stext="${stext#"$item"}"
             [ -n "$stext" ] || break
-            stext="${stext#$__AS__US}"
+            stext="${stext#"$__AS__US"}"
         done
         printf " )"
         ;;

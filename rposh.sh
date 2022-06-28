@@ -27,6 +27,7 @@ rscript() { (
     command="$1"; shift
     base_command=$(basename "$command")
 
+    # shellcheck disable=SC2034
     error_log=""
 
     ssh_options=("-o" "ControlPersist=${RPOSH_SSH_KEEPALIVE:-60}" \
@@ -132,5 +133,6 @@ rscript() { (
     if catch e; then
         warn "Error $e shutting down threadpool"
     fi
-    exit $job_pool_nerrors
+    # shellcheck disable=SC2154
+    exit "$job_pool_nerrors"
 ) }
