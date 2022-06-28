@@ -113,14 +113,14 @@ _DICT() {(
         while [ -z "$last" ]; do
             key="$(__ason__to_next "$__AS__US" "$keys")"
             # remove the found item and any subsequent separator
-            keys="${keys#$key}"
+            keys="${keys#"$key"}"
             [ -n "$keys" ] || last=1
-            keys="${keys#$__AS__US}"
+            keys="${keys#"$__AS__US"}"
             value="$(__ason__to_next "$__AS__US" "$values")"
             # remove the found item and any subsequent separator
-            values="${values#$value}"
+            values="${values#"$value"}"
             [ -n "$values" ] || last=1
-            values="${values#$__AS__US}"
+            values="${values#"$__AS__US"}"
             if [ -z "$start" ]; then
                 printf "%s" "$__AS__RS"
             else
@@ -189,9 +189,9 @@ _LENGTH() {(
             item="$(__ason__to_next "$separator" "$stext")"
             [ "$item" != "$_UNDEF" ] || break
             (( ++count ))
-            stext="${stext#$item}"
+            stext="${stext#"$item"}"
             [ -n "$stext" ] || break
-            stext="${stext#$separator}"
+            stext="${stext#"$separator"}"
         done
         printf "%s" "$count"
         ;;
@@ -261,9 +261,9 @@ _GET() {(
             item="$(__ason__to_next "$__AS__US" "$stext")"
             (( ++count ))
             # remove the found item and any subsequent separator
-            stext="${stext#$item}"
+            stext="${stext#"$item"}"
             [ -n "$stext" ] || break
-            stext="${stext#$__AS__US}"
+            stext="${stext#"$__AS__US"}"
         done
         if [ "$count" = "$subscript" ]; then
             printf "%s" "$(__ason__unpad "$item")"
@@ -319,9 +319,9 @@ _READ() {(
         while true; do
             item=$(__ason__to_next "$__AS__US" "$stext")
             printf " %q" "$(__ason__unpad "$item")"
-            stext="${stext#$item}"
+            stext="${stext#"$item"}"
             [ -n "$stext" ] || break
-            stext="${stext#$__AS__US}"
+            stext="${stext#"$__AS__US"}"
         done
         printf " )"
         ;;

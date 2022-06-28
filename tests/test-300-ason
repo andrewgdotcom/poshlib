@@ -50,7 +50,7 @@ ${_PAD}test 1${_PAD}${__AS__US}${_PAD}${testquote}${_PAD}${__AS__EOT}"
 testdict="${__AS__SOH}${_PAD}${__AS__US}${_DICT}${__AS__STX}\
 ${_PAD}test 1${_PAD}${__AS__US}${_PAD}test 1${_PAD}${__AS__RS}\
 ${_PAD}testquote${_PAD}${__AS__US}${_PAD}${testquote}${_PAD}${__AS__EOT}"
-[[ $(_DICT "$(_LIST "test 1" "testquote")" "$testlist") == $testdict ]] \
+[[ $(_DICT "$(_LIST "test 1" "testquote")" "$testlist") == "$testdict" ]] \
     || fail _DICT
 
 unpadlist="${__AS__SOH}${_PAD}${__AS__US}${_LIST}${__AS__STX}\

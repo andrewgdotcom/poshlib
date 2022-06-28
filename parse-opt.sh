@@ -79,7 +79,7 @@ __PO__set_var() {
     # split on `=` into variable and default value.
     # NB we do it the hard way to ensure default="" if no default given.
     local variable="${var_with_default%=*}"
-    local default="${var_with_default#${variable}}"
+    local default="${var_with_default#"${variable}"}"
     default="${default#=}"
     # if we have been passed a value, set the variable to it,
     # otherwise to the default (if that was provided)
