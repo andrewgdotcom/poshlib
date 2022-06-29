@@ -9,7 +9,7 @@ It depends on a small number of commonly installed POSIX tools:
 * getopt (extended)
 * ssh (ControlMaster support required, rposh module only)
 
-Note that extended getopt is not shipped with MacOS, and must be installed via e.g. MacPorts.
+Note that extended getopt is not shipped with MacOS, and must be installed via e.g. MacPorts or Homebrew.
 
 Currently only Bash 4+ is well supported.
 
@@ -99,15 +99,232 @@ The default search path contains the directory from which poshlib.sh has been so
 
 ## Optional modules
 
+### strict - shell "strict mode"
+
+This sets `-euo pipefail` and enables some basic default error handling.
+Note that this is NOT a panacea and has significant side effects.
+It is *strongly recommended* that you also use a linter such as shellcheck (https://shellcheck.net).
+
+See e.g. http://redsymbol.net/articles/unofficial-bash-strict-mode/ (but note that `strict` *does not* alter $IFS globally as this changes the semantics of shell scripts in a non-obvious yet invasive manner)
+
+With strict mode on, there are specific extra precautions you should take when writing code:
+
+#### Use explicit default values on variables
+
+You may need to handle variables that might be intentionally unset (optional parameters, environment vars etc).
+If so, setting a default value is vital to prevent unset-parameter errors.
+
+To use a default value in situ, use:
+
+```
+echo "${variable-"default value"}"
+```
+
+To set a default value indefinitely, use the construction:
+
+```
+: "${variable="default value"}"
+```
+
+You should always quote the default value if it contains whitespace, special characters, or a variable expansion.
+
+Default values should also be used in conditional statements such as:
+
+```
+if [[ $1 ]]; then echo "$1"; fi
+```
+
+The above is *unsafe*. It should be replaced with:
+
+```
+if [[ ${1-} ]]; then echo "$1"; fi
+```
+
+Note that default values can also be used to replace empty (but not unset) variables.
+To replace both unset *and* empty variables, use `:-` or `:=` as appropriate:
+
+```
+echo "${variable:-"default value"}"
+: "${variable:="default value"}"
+```
+
+#### Use null-safe array expansions
+
+If you need to support bash v4.3 or earlier (e.g. CentOS 7 or Darwin/MacOS), then you should *never* use the idiom:
+
+```
+"${array[@]}"
+```
+
+If the array is defined but empty, it will exit with an `unbound variable` error  
+(this is a design flaw in bash that was finally fixed in v4.4).
+You should instead use the following incantation WITHOUT surroundng double quotes (yes, really):
+
+```
+${array+"${array[@]}"}
+```
+
+https://stackoverflow.com/questions/7577052/bash-empty-array-expansion-with-set-u/61551944#61551944
+
+You can find unsafe array expansions with the following one-liner:
+
+```
+grep -ER '([^+])("\$\{([^[{}]+)\[?@\]?\}")([^{]|$)'
+```
+
+And this one-liner *should* replace them with their safe counterparts 
+(however you MUST manually check the resulting code for errors, as this is not foolproof).
+
+```
+sed -Ei 's/([^+])("\$\{([^[{}]+)\[@\]\}")([^{]|$)/\1\${\3+\2}\4/g'
+```
+
+#### Beware of return codes from subcommands
+
+It is quite common in shell scripting to pass a stream of data through a subcommand such as `grep` or `awk`.
+You should beware that `grep` in particular will exit with a failure code if it does not match any data.
+
+The following is *unsafe*:
+
+```
+lines=$(grep "foo" /tmp/data)
+```
+
+If no lines in `/tmp/data` match, this will throw an error and exit.
+If empty output from `grep` is expected, you will need to add an explicit `|| true`:
+
+```
+lines=$(grep "foo" /tmp/data || true)
+```
+
+Note that since `strict` sets `-o pipefail`, this has to be done even if `grep` is not the last command in the pipeline:
+
+```
+lines=$(grep "foo" /tmp/data | sort -u || true)
+```
+
+Confusingly, `awk` will *NOT* generally return an error code on no match.
+
+#### Don't use `$?`
+
+If you need to distinguish between different nonzero return codes, the module `swine` implements a simple `try/catch` utility (see below).
+
+
+#### Don't use `&&` as a guard operator
+
+The use of `||` as a guard operator traps and handles nonzero return codes consistently, but the corresponding `&&` operator *does not*.
+
+For example, the following is *not safe*:
+
+```
+my_function() {
+    [[ $test == "true" ]] && do_something
+}
+```
+
+If `$test` is not "true", and this is the last line of a script or function, then the script or function will exit with a nonzero error code (but *not fail*!).
+
+To avoid, you can either use the converse `||` construction consistently:
+
+```
+[[ $test != true ]] || do_something
+```
+
+OR you can get into the habit of always ending scripts / functions with explicit `exit 0` / `return 0` statements.
+
+#### Don't use `let` / `(( ))` outside a conditional without forcing its anomalous return code
+
+`let` and its modern equivalent `(( ))` return nonzero if the last expression in the (comma-separated) argument list evaluates to zero.
+
+https://unix.stackexchange.com/questions/32250/why-does-a-0-let-a-return-exit-code-1
+
+This is designed so that flow control statements such as `if`, which are designed to operate on the return codes of *commands*, can also operate on expressions in a similar way to other programming languages:
+
+```
+if (( a < b + c )); then
+    echo "a is lesser"
+fi
+```
+
+Without the anomalous error return code of `let`, this would have to be implemented as:
+
+```
+if [[ $(( a < b + c )) == 1 ]]; then
+    echo "a is lesser"
+fi
+```
+
+(Note carefully the conventional (C-style) use of 0==false and 1==true as the result of `let` equality tests, the opposite way around from the shell's handling of error codes)
+
+Each of the following lines is therefore counterintuitively *unsafe*:
+
+```
+let "a=b-c"
+(( a++ ))
+```
+
+There are several workarounds.
+Which one is more appropriate will depend on context and personal taste.
+
+* replace `(( variable = expression ))` with `variable=$(( expression ))`
+* replace `(( expression ))` with `(( expression , 1 ))` to force success
+
+The following are safe:
+
+```
+a=$(( b-c ))
+(( a++ , 1 ))
+```
+
+#### Don't test the return value of functions or complex commands
+
+When complex commands, subshells, functions etc. are used in the conditional of a flow control command, all errors are discarded by the flow control statement.
+This is because flow control works by temporarily *globally* disabling error checking and then checking $? at the end of the conditional.
+
+The following are all *unsafe*:
+
+```
+f() { false; true; }
+if f; then
+    do_something
+fi
+if ( false; true; ); then
+    do_something
+fi
+if { false; true; }; then
+    do_something
+fi
+```
+
+https://fvue.nl/wiki/Bash:_Error_handling
+
 ### ansi - macro definitions for ANSI terminal formatting
 
 See ansi.sh for a full list of formatting macros
 
 ### ason - serialisation and deserialisation routines
 
-ASON is a lightweight serialisation format which enables complex data structures to be passed as strings.
+ASON is a lightweight serialisation format which enables complex data structures to be passed as strings,
+for data transfer between shell functions, subcommands, pipelines etc.
 
 Currently only LIST types are implemented. See ason.sh for usage details.
+
+### fakehash - emulate associative arrays in shells that don't provide them
+
+Emulate an associative array using two regular arrays.
+
+It defines seven functions:
+
+* fakehash.declare ARRAY
+* fakehash.get ARRAY key [key ...]
+* fakehash.keys ARRAY
+* fakehash.update ARRAY key=value [key=value ...]
+* fakehash.remove ARRAY key [key ...]
+* fakehash.compact ARRAY
+* fakehash.unset ARRAY
+
+The algorithm is inefficient and does not implement an actual hash, nor does it use sparse arrays.
+There is a specific `fakehash.compact` function that should be called periodically to recover memory.
 
 ### flatten - convert a poshlib script with `use` dependencies into a flat script
 
@@ -176,6 +393,9 @@ If the script has been sourced or used, then it will do nothing and it is the re
 
 ### parse-opt - routines for parsing GNU-style longopts
 
+This requires extended getopt.
+Note that Darwin/MacOS does NOT supply gnu getopt by default; it must be installed via e.g. MacPorts or Homebrew.
+
 All of the functions *must* be invoked using `eval` in order to modify the calling script's ARGV.
 
 The full-featured version is:
@@ -213,7 +433,7 @@ This requires a version of ssh(1) that supports ControlMaster.
 
 ### swine - make bash a little bit more like perl
 
-This module sets some shell option defaults to make it more like perl's `strict`, registers an error handler that prints better debugging info, and defines some useful functions:
+This module sets strict mode (see above), and also defines some useful perl-like functions:
 
 * say "$text"
     * prints a line on STDOUT without parsing special characters
@@ -227,7 +447,8 @@ This module sets some shell option defaults to make it more like perl's `strict`
     * succeeds if a string is contained in an array or list of strings
 
 Note that try works by calling `eval` on its arguments, so they should be quoted accordingly.
-It does not work reliably on complex commands, subshells etc.; a function should be defined if these are required.
+It does not work reliably on complex commands, subshells, or functions.
+This is a design limitation of bash.
 
 ## Notes
 

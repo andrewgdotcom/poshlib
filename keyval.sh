@@ -1,26 +1,29 @@
 # shellcheck disable=SC2148
 ################################################################################
-# Shell functions for CRUD manipulation of key/value pairs in shell files
+# Shell functions for CRUD manipulation of key/value pairs in shell-like files
 # e.g. `FOO=bar`
 #
 # Four functions are defined, one each for CRUD.
+# One further function is defined as an `eval` wrapper.
+#
 # The first argument to each function is the name of the file
 # The optional second argument is the key to be read or written
 # The optional third argument is the value to be written.
 #
-# Note that the output of keyval-read() must be eval-ed for its `key=value`
-# pairs to be usable in the calling routine. If keyval-read is passed no key,
-# then it reads (and outputs) all key-value pairs.
-# `eval $(keyval-read FILE)` is preferable to sourcing when only `key=value`
-# variable settings are desired.
+# If `keyval.read` is passed no key, then it reads all key-value pairs.
+#
+# `keyval.import` calls `keyval.read` and uses the key-value pairs returned to
+# update the corresponding variables in the calling context.
+#
+# `keyval.import` is safer than `source` as only `key=value` lines are processed.
 ################################################################################
 
-_sedescape() {
+__keyval.sedescape() {
     # Escape any characters likely to confuse sed
     sed -E -e 's/([][\\&./])/\\\1/g' <<< "$1"
 }
 
-keyval-read() {(
+keyval.read() {(
     use swine
     use parse-opt
 
@@ -48,8 +51,13 @@ keyval-read() {(
         printf "%s=%q\n" "${key}" "${val}"
     done
 )}
+keyval-read () { keyval.read "$@" ;}
 
-keyval-add() {(
+keyval.import() {
+    eval "$(keyval.read "$@")"
+}
+
+keyval.add() {(
     use swine
     use parse-opt
 
@@ -61,8 +69,8 @@ keyval-add() {(
     key="$1"; shift
     val="${1:-}"
 
-    keyquote=$(_sedescape "$key")
-    valquote=$(_sedescape "$val")
+    keyquote=$(__keyval.sedescape "$key")
+    valquote=$(__keyval.sedescape "$val")
 
     if ! grep -Eq "^\\s*${keyquote}=" "$filename" 2>/dev/null || [ "${MULTI:-}" == true ]; then
         # Either there is no matching uncommented key, or we don't care
@@ -79,20 +87,35 @@ keyval-add() {(
             # This matches the first instance, replaces using a repeat regex, then
             # enters an inner loop that consumes the rest of the file verbatim
             if [ "${MATCH_INDENT:-}" == true ]; then
-                sed -i -e "/^\\(\\s*\\)\\(#\?\\)\\(\\s*${keyquote}=\\)/ {s//\\1\\3${valquote}\\n\\1\\2\\3/; " -e ':a' -e '$!{n;ba' -e '};}' "$filename"
+                sed -i -e "/^\\(\\s*\\)\\(#\?\\)\\(\\s*${keyquote}=\\)/ {
+                    s//\\1\\3${valquote}\\n\\1\\2\\3/
+                    :a
+                    \$! {
+                        n
+                        ba
+                    } \
+                }" "$filename"
             else
-                sed -i -e "/^\\(\\s*#\?\\s*\\)\\(${keyquote}=\\)/ {s//\\2${valquote}\\n\\1\\2/; " -e ':a' -e '$!{n;ba' -e '};}' "$filename"
+                sed -i -e "/^\\(\\s*#\?\\s*\\)\\(${keyquote}=\\)/ {
+                    s//\\2${valquote}\\n\\1\\2/
+                    :a
+                    \$! {
+                        n
+                        ba
+                    }
+                }" "$filename"
             fi
         else
             say "${key}=${val}" >> "$filename"
         fi
     elif [ "${UPDATE:-}" != "false" ]; then
         # There is a matching uncommented key AND the value must be modified
-        keyval-update --no-add "$filename" "$key" "$val"
+        keyval.update --no-add "$filename" "$key" "$val"
     fi
 )}
+keyval-add () { keyval.add "$@" ;}
 
-keyval-update() {(
+keyval.update() {(
     use swine
     use parse-opt
 
@@ -104,16 +127,17 @@ keyval-update() {(
     key="$1"; shift
     val="${1:-}"
 
-    keyquote=$(_sedescape "$key")
-    valquote=$(_sedescape "$val")
+    keyquote=$(__keyval.sedescape "$key")
+    valquote=$(__keyval.sedescape "$val")
 
     sed -i -e "s/^\\(\\s*${keyquote}=\\).*$/\\1${valquote}/" "$filename"
     if [ "${ADD:-}" != "false" ] && ! grep -E -q "^\\s*${keyquote}=" "$filename"; then
         MATCH_INDENT="${MATCH_INDENT:-}" keyval-add --no-update "$filename" "$key" "$val"
     fi
 )}
+keyval-update () { keyval.update "$@" ;}
 
-keyval-delete() {(
+keyval.delete() {(
     use swine
     use parse-opt
 
@@ -122,7 +146,7 @@ keyval-delete() {(
     eval "$(parse-opt-simple)"
 
     filename="$1"; shift
-    keyquote=$(_sedescape "$1")
+    keyquote=$(__keyval.sedescape "$1")
 
     if [ "${COMMENT:-}" == "true" ]; then
         # comment out instead of deleting
@@ -131,3 +155,4 @@ keyval-delete() {(
         sed -E -i -e "/^\\s*${keyquote}(\[[A-Za-z0-9_]+\])?=.*$/d" "$filename"
     fi
 )}
+keyval-delete () { keyval.delete "$@" ;}

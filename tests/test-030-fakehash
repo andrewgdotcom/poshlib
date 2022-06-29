@@ -1,0 +1,41 @@
+#!/bin/bash
+
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+# shellcheck disable=SC1090,SC1091
+. "$SCRIPT_DIR/../poshlib.sh" || exit 1
+use swine
+use fakehash
+
+fakehash.declare A
+
+[[ $(fakehash.get A key1) == "" ]] || echo "did not get nonexistent key"
+
+fakehash.update A key1=value1
+fakehash.update A key2=value2
+
+[[ $(fakehash.keys A) == " key1 key2" ]] || echo "did not get the right number of keys"
+[[ $(fakehash.get A key1) == value1 ]] || echo "did not get key1->value1"
+[[ $(fakehash.get A key2) == value2 ]] || echo "did not get key2->value2"
+
+fakehash.remove A key1
+
+[[ $(fakehash.get A key1) == "" ]] || echo "key1 not deleted"
+[[ $(fakehash.get A key2) == value2 ]] || echo "key2 is not still there"
+
+fakehash.update A key2=value2modified
+
+[[ $(fakehash.get A key2) == value2modified ]] || echo "did not get key2->value2modified"
+
+fakehash.compact A
+
+[[ $(fakehash.get A key2) == value2modified ]] || echo "compact caused data loss"
+# shellcheck disable=SC2154
+[[ ${#__fakehash_A_keys[@]} == 1 ]] || echo "did not compact"
+
+fakehash.remove A key2
+
+[[ $(fakehash.get A key2) == "" ]] || echo "key2 not deleted"
+
+fakehash.unset A
+
+exit 0
