@@ -5,8 +5,6 @@
 # This allows for arbitrary objects to be passed as string variables,
 # or through pipelines.
 #
-# All functions are call by value, and are pure functions.
-#
 # The functions can be divided into constructors, metrics, getters,
 # conversions, and editors. These behave similarly across the different
 # types of structure.
@@ -230,23 +228,28 @@ _WIDTH() {(
 #
 #   $(_GET "$structure" ["$subscript"] ["$key"])
 #   $(_VALUES "$structure")
-#   eval "$(_READ var "$structure")"
 #
 # _GET returns a single value from the structure.
 # If the parent structure is a _LIST, only $subscript is given.
 # If the parent structure is a _DICT, only $key is given.
 # If the parent structure is a _TABLE, both are given in the order
 # row, column ($subscript, $key).
-# If _GET is passed an invalid $subscript or $key, it returns $_UNDEF and a
-# nonzero exit code.
+# If _GET is passed an invalid $subscript or $key, it returns $_UNDEF
+# and a nonzero exit code.
 #
 # _VALUES returns all the values in $structure as a flat _LIST. If
 # $structure is itself a _LIST, it returns its argument unchanged.
 #
-# _READ returns a snippet of shell code suitable for passing to `eval`, which
-# assigns the values of a _LIST to the array `var`; it is analogous to
-# `read -a var <<< "$input"`. This is kludgy, but the only reliable way to
-# *selectively* word-split a substitution.
+# The following getters are defined for _LISTs:
+#
+#   _READ var "$structure"
+#   _FOREACH var [in] "$structure" command [args...]
+#
+# _READ assigns the values of a _LIST to the array `var` in the calling
+# context; it is analogous to `read -a var <<< "$input"`.
+#
+# _FOREACH runs the supplied command with `var` set to each member of
+# the list in turn. The command must be a one-liner.
 #
 ########################################################################
 
@@ -311,7 +314,7 @@ _VALUES() {(
     esac
 )}
 
-_READ() {(
+__READ_NOEVAL() {(
     use swine
     use ason/lowlevel
     varname="$1"; shift
@@ -334,13 +337,22 @@ _READ() {(
     "$_DICT" | "$_TABLE" | "$_ARRAY" )
         # Call _VALUES to convert to list, and recurse
         # TODO: This is inefficient, so rewrite at some point
-        _READ "$(_VALUES "$structure")"
+        __READ_NOEVAL "$(_VALUES "$structure")"
         ;;
     * )
         die 101 "Not implemented"
         ;;
     esac
 )}
+
+_READ() {
+    eval "$(__READ_NOEVAL "$@")"
+}
+
+_FOREACH() {
+    die 101 "Not implemented"
+}
+
 
 ########################################################################
 #

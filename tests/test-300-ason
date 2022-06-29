@@ -114,7 +114,7 @@ teststext="$testlist${__AS__US}$testquote"
 [[ $(_GET "$unpadlist" 2) == "$_TRUE" ]] || fail "_GET _TRUE"
 [[ $(_GET "$unpadlist" 3) == "" ]] || fail "_GET ''"
 
-eval "$(_READ list "$unpadlist")"
+_READ list "$unpadlist"
 # shellcheck disable=SC2154
 [[ "${list[0]}" == "test 1" ]] || fail "_READ test 1"
 [[ "${list[1]}" == "$_TRUE" ]] || fail "_READ _TRUE"
@@ -122,7 +122,7 @@ eval "$(_READ list "$unpadlist")"
 [[ "${list[3]-unset}" == "unset" ]] || fail "_READ unset"
 
 testexplode="$(_LIST 1 $'a\nb' "$_TRUE" 4 "a b")"
-eval "$(_READ list "$testexplode")"
+_READ list "$testexplode"
 count=0
 for i in "${list[@]}"; do
     ((++count))

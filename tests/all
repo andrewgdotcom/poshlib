@@ -5,5 +5,5 @@ SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 use swine
 
 for i in "$SCRIPT_DIR"/test-*; do
-	$i || echo "$i failed!"
+	$i || echo "$i failed in bash version ${BASH_VERSION}!"
 done
