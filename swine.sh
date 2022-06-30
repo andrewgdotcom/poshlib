@@ -8,13 +8,8 @@
 # THIS IS INTENTIONAL as it should never be executed, only sourced.
 ################################################################################
 
-set -o errexit
-set -o pipefail
-set -o nounset
-__posh__err_report() {
-    echo "errexit $? on line $(caller)" >&2
-}
-trap __posh__err_report ERR
+# For backwards compatibility reasons, `swine` implies `strict`
+use strict
 
 # The default behaviour of `echo` differs between shells, so we deprecate it.
 # say (from perl6/raku) forces there to be no escape-char handling at runtime.
@@ -44,11 +39,7 @@ warn() {
 
 die() {
     local errcode="$1"; shift
-    local text="$1"; shift
-    if [ "$*" != "" ]; then
-        die 102 "Too many arguments to die() at line $(caller)"
-    fi
-    printf '%s\n' "$text" >&2
+    printf '%s\n' "$@" >&2
     exit "$errcode"
 }
 
@@ -68,7 +59,7 @@ catch() {
 }
 
 # Find if the first argument is contained in the rest of the arguments.
-# This is particularly useful for bash pseudo-arrays:
+# This is particularly useful for bash arrays:
 # if contains "$element" "${array[@]}"; then ...
 
 contains() {
