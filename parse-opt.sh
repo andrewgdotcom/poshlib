@@ -3,53 +3,103 @@
 # Extended getopt handler based on https://stackoverflow.com/a/29754866/1485960
 # This file has no magic number, and is not executable.
 # THIS IS INTENTIONAL as it should never be executed, only sourced.
-#
-# NB this script uses the __PO__ prefix on internal functions and variables
-# to avoid naming clash. DO NOT USE __PO__<*> anywhere in the calling script.
 ################################################################################
 
-#############
-# SIMPLE USAGE
-#############
+###############################
+# SIMPLE METHODS (RECOMMENDED)
+###############################
 #
-# PO_SIMPLE_PREFIX, PO_SIMPLE_FLAGS and PO_SIMPLE_PARAMS must be defined in the
-# calling script, e.g.:
+# Parameters are supplied on the command line as gnu long options:
+#
+#    command --parameter=value
+#
+# If a value is given, the value of the long option `parameter` will be provided
+# to the calling environment in a variable `PARAMETER`. Otherwise, the variable 
+# will be ignored (this allows the caller to easily fall back to an envar).
+#
+# Flags take a similar format:
+#
+#    command --debug
+#    command --no-debug
+#
+# If the flag is provided, the corresponding variable is set to "true".
+# If the inverse "no-flag" is provided, the variable is set to "false".
+# If neither is provided, the variable is ignored.
+#
+# Valid parameters and flags are defined by the calling script, e.g.:
 #
 # --
-# use parse-opt
+#   use parse-opt
 #
-# PO_SIMPLE_PREFIX="COMMAND"
-# PO_SIMPLE_PARAMS="OUTPUT"
-# PO_SIMPLE_FLAGS="VERBOSE FORCE"
+#   parse-opt.prefix COMMAND_
+#   parse-opt.params OUTPUT
+#   parse-opt.flags VERBOSE FORCE
 #
-# eval "$(parse-opt-simple)"
+#   eval "$(parse-opt-simple)"
 # --
 #
-# PO_SIMPLE_PARAMS contains a list of names of with-value long options (minus
-# leading --), and PO_SIMPLE_FLAGS contains a list of names of no-value options.
-# Envar names will be coerced to uppercase and prefixed by PO_SIMPLE_PREFIX.
-# Option names will be coerced to lowercase. No default values can be supplied.
+# `parse-opt.params` takes a list of with-value long options.
+# `parse-opt.flags` takes a list of no-value options.
+# `parse-opt.prefix` takes a prefix that will be applead to each variable name.
+#
+# `parse-opt-simple` outputs a list of commands that MUST be `eval`ed in the
+# calling environment, as they manipulate $@.
+#
+# Variable names will be coerced to UPPER_SNAKE_CASE, while command line option
+# names will be coerced to kebab-case and prefixed with `--`.
+#
+# No default values can be supplied when using simple mode; to set default values
+# you should do so in the shell after invoking parse-opt, e.g.:
+#
+#   : "${VARIABLE="default value"}"
+#
+# (DEPRECATED METHOD)
+#
+# Alternatively, the global variables PO_SIMPLE_PREFIX, PO_SIMPLE_FLAGS and
+# PO_SIMPLE_PARAMS can be defined directly, e.g.:
+#
+# --
+#   use parse-opt
+#
+#   PO_SIMPLE_PREFIX="COMMAND_"
+#   PO_SIMPLE_PARAMS="OUTPUT"
+#   PO_SIMPLE_FLAGS="VERBOSE FORCE"
+#
+#   eval "$(parse-opt-simple)"
+# --
+#
+# This functionality may be removed in a future version of parse-opt.
 
-#############
-# FULL USAGE
-#############
+####################
+# LOW LEVEL METHODS
+####################
 #
-# PO_SHORT_MAP and PO_LONG_MAP must be populated in the calling script, e.g.:
+# We can achieve more granular control over getopt using low level methods.
+#
+# Short and long option definitions must be populated in the calling script:
+#
+#   parse-opt.short KEY VALUE
+#   parse-opt.long KEY VALUE
+#
+# Example:
 #
 # --
-# use parse-opt
-# eval "$(parse-opt-init)"
+#   use parse-opt
+#   parse-opt.init
 #
-# PO_SHORT_MAP["d::"]="DEBUG=1"
-# PO_SHORT_MAP["v"]="VERBOSE"
-# PO_SHORT_MAP["f"]="FORCE"
+#   parse-opt.short d:: DEBUG=1
+#   parse-opt.short v VERBOSE
+#   parse-opt.short f FORCE
 #
-# PO_LONG_MAP["output:"]="OUTPUT"
-# PO_LONG_MAP["comment::"]="COMMENT=no comment"
-# PO_LONG_MAP["verbose"]="VERBOSE"
+#   parse-opt.long output: OUTPUT
+#   parse-opt.long comment:: COMMENT="no comment"
+#   parse-opt.long verbose VERBOSE
 #
-# eval "$(parse-opt)"
+#   eval "$(parse-opt)"
 # --
+#
+# `parse-opt.init` resets the internal state of the parser. This MUST always
+# be invoked first, as parser state will be inherited from the calling scope.
 #
 # A single colon in the key indicates that the command-line option requires a
 # value, and a double colon that a value is optional; otherwise the option
@@ -67,13 +117,24 @@
 # inverse long option of the form "--no-<OPTION>", which sets the corresponding
 # variable to "false".
 
+###############################################################################
+
+# Fakehash is required in the calling context because evaluation is done there
+use fakehash
+
+parse-opt.short() { fakehash.update PO_SHORT_MAP "$1" "$2"; }
+parse-opt.long() { fakehash.update PO_LONG_MAP "$1" "$2"; }
+parse-opt.prefix() { PO_SIMPLE_PREFIX="$1"; }
+parse-opt.params() { local IFS; IFS=$' \t\n'; PO_SIMPLE_PARAMS="$*"; }
+parse-opt.flags() { local IFS; IFS=$' \t\n'; PO_SIMPLE_FLAGS="$*"; }
+
 ! getopt --test > /dev/null
 if [[ ${PIPESTATUS[0]} -ne 4 ]]; then
-    echo "Enhanced getopt not found!" >&2
+    echo "FATAL: Enhanced getopt not found!" >&2
     exit 1
 fi
 
-__PO__set_var() {
+__parse_opt.set_var() {
     local var_with_default="$1"
     local value="$2"
     # split on `=` into variable and default value.
@@ -91,10 +152,17 @@ __PO__set_var() {
     fi
 }
 
-__PO__canonicalize_argv() {
+__parse_opt.canonicalize_argv() {
     local key
-    for key in "${!PO_SHORT_MAP[@]}"; do
-        if [[ "${PO_SHORT_MAP[$key]%=*}" != "${PO_SHORT_MAP[$key]}" && \
+    local value
+    local shortkeys
+    local longkeys
+    fakehash.keys.read-a shortkeys PO_SHORT_MAP
+    fakehash.keys.read-a longkeys PO_LONG_MAP
+
+    for key in ${shortkeys+"${shortkeys[@]}"}; do
+        value="$(fakehash.get PO_SHORT_MAP "$key")"
+        if [[ "${value%=*}" != "${value}" && \
             "${key%::}" == "${key}" ]]; then
             # sanity failure!
             echo "PANIC: non-optional key '$key' must not have a default value" >&2
@@ -102,9 +170,10 @@ __PO__canonicalize_argv() {
         fi
     done
 
-    declare -A inverses
-    for key in "${!PO_LONG_MAP[@]}"; do
-        if [[ "${PO_LONG_MAP[$key]%=*}" != "${PO_LONG_MAP[$key]}" && \
+    declare -a inverses
+    for key in ${longkeys+"${longkeys[@]}"}; do
+        value="$(fakehash.get PO_LONG_MAP "$key")"
+        if [[ "${value%=*}" != "${value}" && \
             "${key%::}" == "${key}" ]]; then
             # sanity failure!
             echo "PANIC: non-optional key '$key' must not have a default value" >&2
@@ -112,26 +181,26 @@ __PO__canonicalize_argv() {
         fi
         if [[ "$key" == "${key%:}" ]]; then
             # key takes no value, therefore we can support no-<key>
-            inverses["no-$key"]="${PO_LONG_MAP[$key]}"
+            inverses+=( "no-$key" )
         fi
     done
 
     # concatenate option hash keys and invoke enhanced getopt on ARGV
     local canonical_args
     ! canonical_args=$(getopt \
-        -o "$(IFS="";echo "${!PO_SHORT_MAP[*]}")" \
-        -l "$(IFS=,;echo "${!PO_LONG_MAP[*]}","${!inverses[*]}")" \
+        -o "${shortkeys+"${shortkeys[*]}"}" \
+        -l "${longkeys+"${longkeys[*]}"} ${inverses+"${inverses[*]}"}" \
         --name "$0" -- "$@")
     if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
         exit 2
     fi
-
-    # `set` reloads ARGV; `--` forbids set from consuming options
+    # `set` reloads ARGV; `--` forbids `set` from consuming options
     echo set -- "$canonical_args"
 }
 
-__PO__parse_argv() {
+__parse_opt.parse_argv() {
     local key
+    local keys
     local opt
     local variable
     while true; do
@@ -140,41 +209,43 @@ __PO__parse_argv() {
             shift
             break
         fi
-        for key in "${!PO_SHORT_MAP[@]}"; do
+        fakehash.keys.read-a keys PO_SHORT_MAP
+        for key in ${keys+"${keys[@]}"}; do
             # strip trailing colon(s) if possible
             # we can test opt==key below to see if the option expects a value
             opt="${key%%:*}"
-            variable="${PO_SHORT_MAP[$key]}"
+            variable="$(fakehash.get PO_SHORT_MAP "$key")"
             if [[ "${1:-}" == "-$opt" ]]; then
                 if [[ "$opt" == "$key" ]]; then
-                    __PO__set_var "${variable}" "true"
+                    __parse_opt.set_var "${variable}" "true"
                     shift
                     continue 2
                 else
-                    __PO__set_var "${variable}" "$2"
+                    __parse_opt.set_var "${variable}" "$2"
                     shift 2
                     continue 2
                 fi
             fi
         done
-        for key in "${!PO_LONG_MAP[@]}"; do
+        fakehash.keys.read-a keys PO_LONG_MAP
+        for key in ${keys+"${keys[@]}"}; do
             # strip trailing colon(s) if possible
             # we can test opt==key below to see if the option expects a value
             opt="${key%%:*}"
-            variable="${PO_LONG_MAP[$key]}"
+            variable="$(fakehash.get PO_LONG_MAP "$key")"
             if [[ "${1:-}" == "--$opt" ]]; then
                 if [[ "$opt" == "$key" ]]; then
-                    __PO__set_var "${variable}" "true"
+                    __parse_opt.set_var "${variable}" "true"
                     shift
                     continue 2
                 else
-                    __PO__set_var "${variable}" "$2"
+                    __parse_opt.set_var "${variable}" "$2"
                     shift 2
                     continue 2
                 fi
             elif [[ "${1:-}" == "--no-$opt" ]]; then
                 if [[ "$opt" == "$key" ]]; then
-                    __PO__set_var "${variable}" "false"
+                    __parse_opt.set_var "${variable}" "false"
                     shift
                     continue 2
                 else
@@ -194,32 +265,51 @@ __PO__parse_argv() {
 }
 
 parse-opt-init() {
-    echo 'declare -A PO_SHORT_MAP; declare -A PO_LONG_MAP;'
+    # old school, to be called via eval
+    echo "WARNING: 'eval \$(parse-opt-init)' is deprecated, use 'parse-opt.init' instead" >&2
+    echo fakehash.declare PO_LONG_MAP
+    echo fakehash.declare PO_SHORT_MAP
+}
+parse-opt.init() {
+    fakehash.declare PO_LONG_MAP
+    fakehash.declare PO_SHORT_MAP
 }
 
 parse-opt() {
     # shellcheck disable=SC2016
-    echo 'eval "$(__PO__canonicalize_argv "$@")";'
+    echo 'eval "$(__parse_opt.canonicalize_argv "$@")"'
     # shellcheck disable=SC2016
-    echo 'eval "$(__PO__parse_argv "$@")";'
+    echo 'eval "$(__parse_opt.parse_argv "$@")"'
 }
 
 parse-opt-simple() {
-    # Reduce boilerplate even further
-    parse-opt-init
+    # This is normally called from within a command substitution, so we can `use` safely
+    use tr
 
-    # Split on default whitespace
+    local i j
+    # Split PO_SIMPLE_* on default whitespace
     local IFS=$' \t\n'
-    # Coerce prefix to upper case
-    PO_SIMPLE_PREFIX="$(tr a-z- A-Z_ <<< "${PO_SIMPLE_PREFIX:-}")"
-    # Coerce argument names to lower case and the corresponding envars to upper case
+
+    echo parse-opt.init
+
+    # Coerce prefix to UPPER_SNAKE_CASE
+    : "${PO_SIMPLE_PREFIX:=}"
+    tr.UPPER_SNAKE_CASE PO_SIMPLE_PREFIX
+    # Coerce argument names to lower-kebab-case and the corresponding envars to UPPER_SNAKE_CASE
     for i in ${PO_SIMPLE_PARAMS:-}; do
-        echo "PO_LONG_MAP[$(tr A-Z_ a-z- <<< "$i"):]=${PO_SIMPLE_PREFIX}$(tr a-z- A-Z_ <<< "$i");"
+        j=$i
+        tr.kebab-case i
+        tr.UPPER_SNAKE_CASE j
+        # This has to be run in the calling context, otherwise our changes will be descoped
+        echo parse-opt.long "$i:" "${PO_SIMPLE_PREFIX}$j"
     done
     # and for flags
     for i in ${PO_SIMPLE_FLAGS:-}; do
-        echo "PO_LONG_MAP[$(tr A-Z_ a-z- <<< "$i")]=${PO_SIMPLE_PREFIX}$(tr a-z- A-Z_ <<< "$i");"
+        j=$i
+        tr.kebab-case i
+        tr.UPPER_SNAKE_CASE j
+        # This has to be run in the calling context, otherwise our changes will be descoped
+        echo parse-opt.long "$i" "${PO_SIMPLE_PREFIX}$j"
     done
-
     parse-opt
 }

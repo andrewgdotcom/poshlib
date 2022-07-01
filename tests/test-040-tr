@@ -1,0 +1,26 @@
+#!/bin/bash
+SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
+# shellcheck disable=SC1090,SC1091
+. "${SCRIPT_DIR}/../poshlib.sh" || exit 1
+use swine
+use fakehash
+use tr
+
+# shellcheck disable=SC2154
+echo tr uses "$__tr_implementation"
+
+string="MIXED_CASE-Example string"
+tr.kebab-case string
+[[ $string == "mixed-case-example string" ]] || echo "expected 'mixed-case-example string' got '$string'"
+
+string="MIXED_CASE-Example string"
+tr.UPPER-KEBAB-CASE string
+[[ $string == "MIXED-CASE-EXAMPLE STRING" ]] || echo "expected 'MIXED-CASE-EXAMPLE STRING' got '$string'"
+
+string="MIXED_CASE-Example string"
+tr.snake_case string
+[[ $string == "mixed_case_example string" ]] || echo "expected 'mixed_case_example string' got '$string'"
+
+string="MIXED_CASE-Example string"
+tr.UPPER_SNAKE_CASE string
+[[ $string == "MIXED_CASE_EXAMPLE STRING" ]] || echo "expected 'MIXED_CASE_EXAMPLE STRING' got '$string'"

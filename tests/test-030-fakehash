@@ -11,7 +11,6 @@ declare -a got expected
 
 testkeys=( key1 key2 '--bar=testing wibble "  "' ' ' )
 testvalues=( value1 value2 '' 'man, this is tricky' )
-newtestvalues=( x value2modified y z )
 
 [[ $(fakehash.get A key1) == "" ]] || echo "did not get nonexistent key"
 
@@ -41,7 +40,7 @@ testvalues=("${testvalues[@]}") # compact to left
 
 testvalues[0]="newvalue"
 fakehash.update A "${testkeys[0]}" "${testvalues[0]}"
-[[ $(fakehash.get A "${testkeys[0]}") == "${testvalues[0]}" ]] || echo "got $(fakehash.get A '${testkeys[0]}'), expected '"${testvalues[0]}"'"
+[[ $(fakehash.get A "${testkeys[0]}") == "${testvalues[0]}" ]] || echo "got '$(fakehash.get A "${testkeys[0]}")', expected '${testvalues[0]}'"
 
 fakehash.compact A
 
@@ -62,7 +61,7 @@ fakehash.remove A "${testkeys[0]}" "${testkeys[1]}"
 
 [[ $(fakehash.get A "${testkeys[0]}") == "" ]] || echo "'${testkeys[0]}' not deleted"
 [[ $(fakehash.get A "${testkeys[1]}") == "" ]] || echo "'${testkeys[1]}' not deleted"
-[[ $(fakehash.get A "${testkeys[2]}") == "${testvalues[2]}" ]] || echo "'"${testkeys[2]}"' was incorrectly deleted"
+[[ $(fakehash.get A "${testkeys[2]}") == "${testvalues[2]}" ]] || echo "'${testkeys[2]}' was incorrectly deleted"
 
 fakehash.update A key1 value1 key2 value2
 

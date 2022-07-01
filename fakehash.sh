@@ -148,14 +148,14 @@ fakehash.update() {
             # We didn't find the key in the array
             if [[ $empty ]]; then
                 # Fill up an empty slot
-                eval "$keys_var[$empty]=$(printf '%q' "$1")" || return 2
-                eval "$values_var[$empty]=$(printf '%q' "$2")" || return 2
+                eval "${keys_var}[$empty]=$(printf '%q' "$1")" || return 2
+                eval "${values_var}[$empty]=$(printf '%q' "$2")" || return 2
                 # Populate temporary keys so we don't use the same "empty" slot again
                 eval "keys[$empty]=$(printf '%q' "$1")" || return 2
             else
                 # No empty slots, so let's append instead
-                eval "$keys_var+=( $(printf '%q' "$1") )" || return 2
-                eval "$values_var+=( $(printf '%q' "$2") )" || return 2
+                eval "${keys_var}+=( $(printf '%q' "$1") )" || return 2
+                eval "${values_var}+=( $(printf '%q' "$2") )" || return 2
             fi
         fi
         shift; shift
