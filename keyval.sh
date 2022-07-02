@@ -27,8 +27,7 @@ keyval.read() {(
     use swine
     use parse-opt
 
-    # shellcheck disable=SC2034
-    PO_SIMPLE_FLAGS="STRIP"
+    parse-opt.flags "STRIP"
     eval "$(parse-opt-simple)"
 
     filename="$1"; shift
@@ -61,8 +60,7 @@ keyval.add() {(
     use swine
     use parse-opt
 
-    # shellcheck disable=SC2034
-    PO_SIMPLE_FLAGS="UPDATE MULTI MATCH_INDENT"
+    parse-opt.flags "UPDATE MULTI MATCH_INDENT"
     eval "$(parse-opt-simple)"
 
     filename="$1"; shift
@@ -119,8 +117,7 @@ keyval.update() {(
     use swine
     use parse-opt
 
-    # shellcheck disable=SC2034
-    PO_SIMPLE_FLAGS="ADD MATCH_INDENT"
+    parse-opt.flags "ADD MATCH_INDENT"
     eval "$(parse-opt-simple)"
 
     filename="$1"; shift
@@ -141,8 +138,7 @@ keyval.delete() {(
     use swine
     use parse-opt
 
-    # shellcheck disable=SC2034
-    PO_SIMPLE_FLAGS="COMMENT"
+    parse-opt.flags "COMMENT"
     eval "$(parse-opt-simple)"
 
     filename="$1"; shift

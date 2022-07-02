@@ -343,13 +343,18 @@ This is useful if you want to pass a poshlib script to a non-poshlib-aware tool,
 
 This defines the following functions:
 
-* `job_pool_init "$pool_size" "$echo"`
-* `job_pool_run "$command" ["$arg1" ...]`
-* `job_pool_wait`
-* `job_pool_shutdown`
+* `job-pool.init "$pool_size" "$echo"`
+* `job-pool.run "$command" ["$arg1" ...]`
+* `job-pool.wait`
+* `job-pool.shutdown`
 
 They should be always be invoked in the sequence above.
 $pool_size is the number of workers, and $echo is "0" for silence or "1" otherwise.
+
+It also defines the following public variables:
+
+* `$job_pool_nerrors`
+    the cumulative number of errors recorded by the previous run
 
 ### keyval - tool to (more) safely read key-value pairs from shell-script-like files
 
@@ -463,3 +468,7 @@ They each take one argument, the name of a variable to modify in-place.
 ## Notes
 
 * poshlib currently only works reliably with `bash`, but it is intended to (eventually) also support other POSIX shells.
+* It is conventional for poshlib modules to prefix their public function member names with `module.` and public variable member names with `module_` or `MODULE_`.
+    The corresponding conventions for private members are `__module.` and `__module_` or `__MODULE_` respectively.
+    If you are extending poshlib with your own modules, it is recommended to follow this convention.
+    Some modules provide other public member names for backwards compatibility; these are all currently deprecated and will be removed in a future version.

@@ -6,9 +6,9 @@ use rposh
 
 if [ "${1:-}" == "" ]; then
     result=$(
+        e=
         try rscript ",localhost,," --ssh-user="$USER" --sudo-user="$USER" "${BASH_SOURCE[0]}" '\[last\]' 'SHOULD NOT BE DISPLAYED'
         if catch e; then
-            # shellcheck disable=SC2154
             say "ERROR $e"
         fi
     )
