@@ -70,7 +70,9 @@ ${_PAD}${_PAD}${_PAD}${__AS__EOT}"
 
 [[ $(_TYPE "${testquote}") == "$_QUOTE" ]] \
     || fail "_TYPE 1"
-[[ $(_TYPE "test") == "$_UNDEF" ]] \
+
+# intentional failure, force silence
+[[ $(_TYPE "test" || true >/dev/null) == "$_UNDEF" ]] \
     || fail "_TYPE 2"
 
 [[ $(_LENGTH "$(_LIST)") == "0" ]] \

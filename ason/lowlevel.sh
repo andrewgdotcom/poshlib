@@ -166,7 +166,8 @@ __ason__pad() {
 }
 
 __ason__unpad() {
-    printf "%s" "$1" | sed "s/^[ \\t]*//; s/^$_PAD//; s/[ \\t]*$//; s/$_PAD$//"
+    # mac sed doesn't understand \t; construct literal via $'\t' instead
+    printf "%s" "$1" | sed "s/^[ "$'\t'"]*//; s/^$_PAD//; s/[ "$'\t'"]*$//; s/$_PAD$//"
 }
 
 __ason__join() {
