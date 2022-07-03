@@ -9,9 +9,10 @@ It depends on a small number of commonly installed POSIX tools:
 * awk
 * wc
 * getopt (extended)
+* flock (job-pool module only)
 * ssh (ControlMaster support required, rposh module only)
 
-Note that extended getopt is not shipped with MacOS, and must be installed via e.g. MacPorts or Homebrew.
+Note that extended `getopt` and `flock` are not shipped with MacOS, and must be installed via e.g. MacPorts or Homebrew.
 
 Currently only bash v3.2+ is supported.
 

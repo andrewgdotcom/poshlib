@@ -35,11 +35,10 @@
 # end-of-jobs marker
 _job_pool_end_of_jobs="JOBPOOL_END_OF_JOBS"
 
-# job queue used to send jobs to the workers
-_job_pool_job_queue=/tmp/job_pool_job_queue_$$
-
-# where results got logged
-_job_pool_result_log=/tmp/_job_pool_result_log_$$
+# temporary working space
+_job_pool_dir=
+_job_pool_job_queue=
+_job_pool_result_log=
 
 # number of parallel jobs allowed.  also used to determine if job_pool_init
 # has been called when jobs are queued.
@@ -59,18 +58,28 @@ job_pool_nerrors=0
 # private functions
 ################################################################################
 
+# \brief some implementations of flock(1) take a number, others take a filename
+# \param[in] action
+# \param[in] fd
+function _job_pool.flock()
+{
+    if ! flock "$1" "$2" 2>/dev/null ; then
+        flock "$1" "/dev/fd/$2"
+    fi
+}
+
 # \brief debug output
 function _job_pool.echo()
 {
     if [[ "${_job_pool_echo_command}" ]]; then
-        printf "%s" "$*"
+        printf "%s" "$*" >&2
     fi
 }
 
 # \brief cleans up
 function _job_pool.cleanup()
 {
-    rm -f "${_job_pool_job_queue}" "${_job_pool_result_log}"
+    rm -rf "${_job_pool_dir}"
 }
 
 # \brief signal handler
@@ -103,9 +112,9 @@ function _job_pool.worker()
     exec 7<> "${job_queue}"
     while [[ "${cmd}" != "${_job_pool_end_of_jobs}" && -e "${job_queue}" ]]; do
         # workers block on the exclusive lock to read the job queue
-        flock --exclusive 7
+        _job_pool.flock --exclusive 7 || return 1
         IFS=$'\v' read -r -a cmd <"${job_queue}"
-        flock --unlock 7
+        _job_pool.flock --unlock 7
         # the worker should exit if it sees the end-of-job marker or run the
         # job otherwise and save its exit code to the result log.
         if [[ "${cmd[0]}" == "${_job_pool_end_of_jobs}" ]]; then
@@ -126,9 +135,9 @@ function _job_pool.worker()
             # now write the error to the log, making sure multiple processes
             # don't trample over each other.
             exec 8<> "${result_log}"
-            flock --exclusive 8
+            _job_pool.flock --exclusive 8
             _job_pool.echo "${status}job_pool: exited ${result}: ${cmd[*]}" >> "${result_log}"
-            flock --unlock 8
+            _job_pool.flock --unlock 8
             exec 8>&-
             _job_pool.echo "### _job_pool_worker-${id}: exited ${result}: ${cmd[*]}"
         fi
@@ -173,10 +182,22 @@ function job-pool.init()
     _job_pool_pool_size=$pool_size
     _job_pool_echo_command=$echo_command
 
+    # temporary directory
+    _job_pool_dir=$(mktemp -d || { mkdir "/tmp/job-pool-$$" && echo "/tmp/job-pool-$$"; })
+    if [[ ! -d $_job_pool_dir ]]; then
+        echo "Could not create temporary directory" >&2
+        exit 254
+    fi
+
+    # job queue used to send jobs to the workers
+    _job_pool_job_queue="${_job_pool_dir}"/job_queue
+
+    # where results got logged
+    _job_pool_result_log="${_job_pool_dir}"/result_log
+
     # create the fifo job queue and create the exit code log
-    rm -rf "${_job_pool_job_queue}" "${_job_pool_result_log}"
-    mkfifo "${_job_pool_job_queue}"
-    touch "${_job_pool_result_log}"
+    mkfifo "${_job_pool_job_queue}" || exit 254
+    touch "${_job_pool_result_log}" || exit 254
 
     # fork off the workers
     _job_pool.start_workers "${_job_pool_job_queue}" "${_job_pool_result_log}"

@@ -89,8 +89,8 @@ rscript() { (
         fi
 
         # redirect stdout and stderr as required
-        stdout_dev=/proc/self/fd/1
-        stderr_dev=/proc/self/fd/2
+        stdout_dev=/dev/fd/1
+        stderr_dev=/dev/fd/2
         [ -z "${RPOSH_STDOUT_DIR:-}" ] || stdout_dev="$RPOSH_STDOUT_DIR/$target.stdout"
         [ -z "${RPOSH_STDERR_DIR:-}" ] || stderr_dev="$RPOSH_STDERR_DIR/$target.stderr"
 
@@ -116,6 +116,7 @@ rscript() { (
         fi
     }
 
+    job_pool_nerrors=0
     # initialise threadpool
     job-pool.init "${RPOSH_THREADS:-1}" "${POSH_DEBUG:-}"
 
