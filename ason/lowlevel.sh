@@ -24,6 +24,7 @@
 ########################################################################
 
 use ason/entities
+use wc
 
 # Tests
 
@@ -229,8 +230,8 @@ __ason__to_next() {
         __ason__text="${__ason__text#*"${__ason__separator}"}"
 
         # find (number of __AS__SOH) minus (number of __AS__EOT) in chunk
-        __ason__opens=$(tr -c -d "$__AS__SOH" <<< "$__ason__chunk" | wc -c)
-        __ason__closes=$(tr -c -d "$__AS__EOT" <<< "$__ason__chunk" | wc -c)
+        __ason__opens=$(wc.count "$__AS__SOH" <<< "$__ason__chunk")
+        __ason__closes=$(wc.count "$__AS__EOT" <<< "$__ason__chunk")
         (( __ason__depth=__ason__depth+__ason__opens-__ason__closes ))
 
         # if __ason__depth < 0, our ASON does not nest properly; abort

@@ -1,0 +1,23 @@
+#!/bin/bash
+SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
+# shellcheck disable=SC1090,SC1091
+. "${SCRIPT_DIR}/../poshlib.sh" || exit 1
+use swine
+use wc
+
+testdata=$'\n ab  a \n b \n a bc \n\n'
+
+words=$(printf '%s' "$testdata" | wc.words)
+[[ $words == 5 ]] || die 1 "Expected 5 words, got $words"
+
+lines=$(printf '%s' "$testdata" | wc.lines)
+[[ $lines == 5 ]] || die 1 "Expected 5 lines, got $lines"
+
+chars=$(printf '%s' "$testdata" | wc.chars)
+[[ $chars == 21 ]] || die 1 "Expected 21 chars, got $chars"
+
+chars=$(printf '%s' "$testdata" | wc.count a)
+[[ $chars == 3 ]] || die 1 "Expected 3 chars, got $chars"
+
+chars=$(printf '%s' "$testdata" | wc.count $'\n')
+[[ $chars == 5 ]] || die 1 "Expected 5 newlines, got $chars"

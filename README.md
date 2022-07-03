@@ -7,7 +7,6 @@ It depends on a small number of commonly installed POSIX tools:
 * grep
 * sed
 * awk
-* wc
 * getopt (extended)
 * flock (job-pool module only)
 * ssh (ControlMaster support required, rposh module only)
@@ -465,6 +464,20 @@ It implements the following functions:
 * `tr.UPPER_SNAKE_CASE`
 
 They each take one argument, the name of a variable to modify in-place.
+
+### wc - replace system `wc` with internal functions
+
+`wc` does not produce machine-readable output on all platforms.
+This module replaces the most common use cases of system `wc` with predictable forms:
+
+* `wc.words`
+    Counts the number of words on STDIN.
+* `wc.lines`
+    Counts the number of line breaks on STDIN.
+* `wc.chars`
+    Counts the number of characters on STDIN.
+* `wc.count CHAR`
+    Counts the number of occurrences of CHAR in STDIN.
 
 ## Notes
 

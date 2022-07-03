@@ -37,3 +37,17 @@ else
         eval "$1=\$(tr a-z_ A-Z- <<<\"\$$1\")"
     }
 fi
+
+tr.mapchar() {
+    local from=$1
+    local to=$2
+    local char=
+    local IFS=
+    while read -d '' -rn1 char; do
+        if [[ $char == "$from" ]]; then
+            printf '%c' "$to"
+        else
+            printf '%c' "$char"
+        fi
+    done
+}

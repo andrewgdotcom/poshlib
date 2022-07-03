@@ -23,3 +23,7 @@ tr.snake_case string
 string="MIXED_CASE-Example string"
 tr.UPPER_SNAKE_CASE string
 [[ $string == "MIXED_CASE_EXAMPLE STRING" ]] || echo "expected 'MIXED_CASE_EXAMPLE STRING' got '$string'"
+
+string=$'Mixed Case\nExample String'
+newstring=$(tr.mapchar s f <<<"$string")
+[[ $newstring == $'Mixed Cafe\nExample String' ]] || echo "oops $newstring"
