@@ -469,7 +469,8 @@ If no second variable name is given, the first variable is modified in-place.
 It also implements the following stream-editing functions:
 
 * `tr.mapchar $old $new`
-    Replaces every instance of `$old` with `$new` in a stream.
+    Filters STDIN/OUT, replacing each instance of the characters in `$old` with the corresponding characters in `$new`.
+    If `$old` is longer than `$new` then the extra characters will be deleted from the output.
 * `tr.strip`
     Removes all leading and trailing whitespace (as defined by `IFS`) from the stream.
 

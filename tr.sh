@@ -60,8 +60,18 @@ tr.mapchar() {
     local char=
     local IFS=
     while read -d '' -rn1 char; do
-        if [[ $char == "$old" ]]; then
-            printf '%c' "$new"
+        chopold="${old%%"$char"*}"
+        if [[ "$chopold" != "${old}" ]]; then
+            # find the corresponding character in the new set
+            # by truncating them both one character at a time
+            local newchar=${new:0:1}
+            local chopnew=${new#?}
+            while [[ $chopold ]]; do
+                newchar=${chopnew:0:1}
+                chopnew=${chopnew#?}
+                chopold=${chopold#?}
+            done
+            printf '%c' "$newchar"
         else
             printf '%c' "$char"
         fi
