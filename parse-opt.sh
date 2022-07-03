@@ -286,9 +286,9 @@ parse-opt-simple() {
     # This is normally called from within a command substitution, so we can `use` safely
     use tr
 
-    local i j
     # Split PO_SIMPLE_* on default whitespace
     local IFS=$' \t\n'
+    local i param variable
 
     echo parse-opt.init
 
@@ -296,20 +296,20 @@ parse-opt-simple() {
     : "${PO_SIMPLE_PREFIX:=}"
     tr.UPPER_SNAKE_CASE PO_SIMPLE_PREFIX
     # Coerce argument names to lower-kebab-case and the corresponding envars to UPPER_SNAKE_CASE
+    # shellcheck disable=SC2034
     for i in ${PO_SIMPLE_PARAMS:-}; do
-        j=$i
-        tr.kebab-case i
-        tr.UPPER_SNAKE_CASE j
+        tr.UPPER_SNAKE_CASE i variable
+        tr.kebab-case i param
         # This has to be run in the calling context, otherwise our changes will be descoped
-        echo parse-opt.long "$i:" "${PO_SIMPLE_PREFIX}$j"
+        echo parse-opt.long "$param:" "${PO_SIMPLE_PREFIX}${variable}"
     done
     # and for flags
+    # shellcheck disable=SC2034
     for i in ${PO_SIMPLE_FLAGS:-}; do
-        j=$i
-        tr.kebab-case i
-        tr.UPPER_SNAKE_CASE j
+        tr.UPPER_SNAKE_CASE i variable
+        tr.kebab-case i param
         # This has to be run in the calling context, otherwise our changes will be descoped
-        echo parse-opt.long "$i" "${PO_SIMPLE_PREFIX}$j"
+        echo parse-opt.long "$param" "${PO_SIMPLE_PREFIX}${variable}"
     done
     parse-opt
 }

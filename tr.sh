@@ -11,41 +11,57 @@ if
 then
     __tr_implementation=native
     tr.snake_case() {
-        eval "$1=\${$1//-/_}; $1=\${$1,,}"
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "__tr_temp=\${$fromvar//-/_}; $tovar=\${__tr_temp,,}"
     }
     tr.UPPER_SNAKE_CASE() {
-        eval "$1=\${$1//-/_}; $1=\${$1^^}"
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "__tr_temp=\${$fromvar//-/_}; $tovar=\${__tr_temp^^}"
     }
     tr.kebab-case() {
-        eval "$1=\${$1//_/-}; $1=\${$1,,}"
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "__tr_temp=\${$fromvar//_/-}; $tovar=\${__tr_temp,,}"
     }
     tr.UPPER-KEBAB-CASE() {
-        eval "$1=\${$1//_/-}; $1=\${$1^^}"
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "__tr_temp=\${$fromvar//_/-}; $tovar=\${__tr_temp^^}"
     }
 else
     __tr_implementation=external
     tr.snake_case() {
-        eval "$1=\$(tr A-Z- a-z_ <<<\"\$$1\")"
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "$tovar=\$(tr A-Z- a-z_ <<<\"\$$fromvar\")"
     }
     tr.UPPER_SNAKE_CASE() {
-        eval "$1=\$(tr a-z- A-Z_ <<<\"\$$1\")"
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "$tovar=\$(tr a-z- A-Z_ <<<\"\$$fromvar\")"
     }
     tr.kebab-case() {
-        eval "$1=\$(tr A-Z_ a-z- <<<\"\$$1\")"
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "$tovar=\$(tr A-Z_ a-z- <<<\"\$$fromvar\")"
     }
     tr.UPPER-KEBAB-CASE() {
-        eval "$1=\$(tr a-z_ A-Z- <<<\"\$$1\")"
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "$tovar=\$(tr a-z_ A-Z- <<<\"\$$fromvar\")"
     }
 fi
 
 tr.mapchar() {
-    local from=$1
-    local to=$2
+    local old=$1
+    local new=$2
     local char=
     local IFS=
     while read -d '' -rn1 char; do
-        if [[ $char == "$from" ]]; then
-            printf '%c' "$to"
+        if [[ $char == "$old" ]]; then
+            printf '%c' "$new"
         else
             printf '%c' "$char"
         fi

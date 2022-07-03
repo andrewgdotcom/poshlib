@@ -9,20 +9,38 @@ use tr
 echo tr uses "$__tr_implementation"
 
 string="MIXED_CASE-Example string"
-tr.kebab-case string
-[[ $string == "mixed-case-example string" ]] || echo "expected 'mixed-case-example string' got '$string'"
 
-string="MIXED_CASE-Example string"
-tr.UPPER-KEBAB-CASE string
-[[ $string == "MIXED-CASE-EXAMPLE STRING" ]] || echo "expected 'MIXED-CASE-EXAMPLE STRING' got '$string'"
+oldstring=$string
+newstring=
+tr.kebab-case oldstring newstring
+[[ $newstring == "mixed-case-example string" ]] || echo "expected 'mixed-case-example string' got '$newstring'"
+[[ $oldstring == "$string" ]] || echo "oldstring was modified! '$oldstring'"
+tr.kebab-case oldstring
+[[ $oldstring == "mixed-case-example string" ]] || echo "(inplace) expected 'mixed-case-example string' got '$oldstring'"
 
-string="MIXED_CASE-Example string"
-tr.snake_case string
-[[ $string == "mixed_case_example string" ]] || echo "expected 'mixed_case_example string' got '$string'"
+oldstring=$string
+newstring=
+tr.UPPER-KEBAB-CASE oldstring newstring
+[[ $newstring == "MIXED-CASE-EXAMPLE STRING" ]] || echo "expected 'MIXED-CASE-EXAMPLE STRING' got '$newstring'"
+[[ $oldstring == "$string" ]] || echo "oldstring was modified! '$oldstring'"
+tr.UPPER-KEBAB-CASE oldstring
+[[ $oldstring == "MIXED-CASE-EXAMPLE STRING" ]] || echo "(inplace) expected 'MIXED-CASE-EXAMPLE STRING' got '$oldstring'"
 
-string="MIXED_CASE-Example string"
-tr.UPPER_SNAKE_CASE string
-[[ $string == "MIXED_CASE_EXAMPLE STRING" ]] || echo "expected 'MIXED_CASE_EXAMPLE STRING' got '$string'"
+oldstring=$string
+newstring=
+tr.snake_case oldstring newstring
+[[ $newstring == "mixed_case_example string" ]] || echo "expected 'mixed_case_example string' got '$newstring'"
+[[ $oldstring == "$string" ]] || echo "oldstring was modified! '$oldstring'"
+tr.snake_case oldstring
+[[ $oldstring == "mixed_case_example string" ]] || echo "(inplace) expected 'mixed_case_example string' got '$oldstring'"
+
+oldstring=$string
+newstring=
+tr.UPPER_SNAKE_CASE oldstring newstring
+[[ $newstring == "MIXED_CASE_EXAMPLE STRING" ]] || echo "expected 'MIXED_CASE_EXAMPLE STRING' got '$newstring'"
+[[ $oldstring == "$string" ]] || echo "oldstring was modified! '$oldstring'"
+tr.UPPER_SNAKE_CASE oldstring
+[[ $oldstring == "MIXED_CASE_EXAMPLE STRING" ]] || echo "(inplace) expected 'MIXED_CASE_EXAMPLE STRING' got '$oldstring'"
 
 string=$'Mixed Case\nExample String'
 newstring=$(tr.mapchar s f <<<"$string")

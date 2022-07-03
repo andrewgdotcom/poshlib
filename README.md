@@ -455,14 +455,22 @@ This module replaces some common uses of external `tr` with internal shell funct
 Some older versions of `bash` (e.g. MacOS's v3.2) have limited native support for string manipulation.
 This can reduce resource usage in most cases.
 
-It implements the following functions:
+It implements the following variable-manipulation functions:
 
-* `tr.kebab-case`
-* `tr.snake_case`
-* `tr.UPPER-KEBAB-CASE`
-* `tr.UPPER_SNAKE_CASE`
+* `tr.kebab-case var [dest]`
+* `tr.snake_case var [dest]`
+* `tr.UPPER-KEBAB-CASE var [dest]`
+* `tr.UPPER_SNAKE_CASE var [dest]`
 
-They each take one argument, the name of a variable to modify in-place.
+They each take one argument, the name of a variable to modify.
+If a second variable name is given, the modified text is written to it.
+If no second variable name is given, the first variable is modified in-place.
+
+It also implements the following stream-editing functions:
+
+* `tr.mapchar $old $new`
+
+This replaces every instance of `$old` with `$new` in a stream.
 
 ### wc - replace system `wc` with internal functions
 
