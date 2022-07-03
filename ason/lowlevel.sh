@@ -232,7 +232,7 @@ __ason__to_next() {
         # find (number of __AS__SOH) minus (number of __AS__EOT) in chunk
         __ason__opens=$(wc.count "$__AS__SOH" <<< "$__ason__chunk")
         __ason__closes=$(wc.count "$__AS__EOT" <<< "$__ason__chunk")
-        (( __ason__depth=__ason__depth+__ason__opens-__ason__closes ))
+        __ason__depth=$(( __ason__depth+__ason__opens-__ason__closes ))
 
         # if __ason__depth < 0, our ASON does not nest properly; abort
         [ "$__ason__depth" -ge 0 ] || return 1
