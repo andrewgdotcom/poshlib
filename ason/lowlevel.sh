@@ -24,6 +24,7 @@
 ########################################################################
 
 use ason/entities
+use tr
 use wc
 
 # Tests
@@ -167,8 +168,9 @@ __ason__pad() {
 }
 
 __ason__unpad() {
-    # mac sed doesn't understand \t; construct literal via $'\t' instead
-    printf "%s" "$1" | sed "s/^[ "$'\t'"]*//; s/^$_PAD//; s/[ "$'\t'"]*$//; s/$_PAD$//"
+    # tr.strip actually deletes one or more contiguous $_PAD characters.
+    # They SHOULD NOT appear, so this is lenient but not strictly wrong.
+    printf "%s" "$1" | IFS=$' \t' tr.strip | IFS="$_PAD" tr.strip
 }
 
 __ason__join() {
