@@ -469,8 +469,16 @@ If no second variable name is given, the first variable is modified in-place.
 It also implements the following stream-editing functions:
 
 * `tr.mapchar $old $new`
+    Replaces every instance of `$old` with `$new` in a stream.
+* `tr.strip`
+    Removes all leading and trailing whitespace (as defined by `IFS`) from the stream.
 
-This replaces every instance of `$old` with `$new` in a stream.
+Beware that non-default `IFS` may not behave as you expect if a trailing newline has been silently added by `echo` or `<<<`.
+For safety, you should always use `printf` with non-default `IFS`, e.g.
+
+```
+printf '%s' "$string" | IFS=' ' tr.strip`
+```
 
 ### wc - replace system `wc` with internal functions
 

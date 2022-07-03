@@ -42,6 +42,25 @@ tr.UPPER_SNAKE_CASE oldstring newstring
 tr.UPPER_SNAKE_CASE oldstring
 [[ $oldstring == "MIXED_CASE_EXAMPLE STRING" ]] || echo "(inplace) expected 'MIXED_CASE_EXAMPLE STRING' got '$oldstring'"
 
-string=$'Mixed Case\nExample String'
+string=$'Mixed Case\n\nExample String'
 newstring=$(tr.mapchar s f <<<"$string")
-[[ $newstring == $'Mixed Cafe\nExample String' ]] || echo "oops $newstring"
+# shellcheck disable=SC2028
+[[ $newstring == $'Mixed Cafe\n\nExample String' ]] || echo "expected 'Mixed Cafe\n\nExample String', got '$newstring'"
+
+string=$'  \t\t  Example\t String  \t\t'
+expected=$'Example\t String'
+newstring=$(tr.strip <<<"$string")
+# shellcheck disable=SC2028
+[[ $newstring == "$expected" ]] || printf '%q\n' "expected \"$expected\", got \"$newstring\""
+
+string=$'  \t\t  Example\t String  \t\t  '
+newstring=$(printf '%s' "$string" | IFS=' ' tr.strip)
+expected=$'\t\t  Example\t String  \t\t'
+# shellcheck disable=SC2028
+[[ $newstring == "$expected" ]] || printf '%q\n' "expected \"$expected\", got \"$newstring\""
+
+string=$'\t\t  Example\t String  \t\t'
+newstring=$(printf '%s' "$string" | IFS=$'\t' tr.strip)
+expected=$'  Example\t String  '
+# shellcheck disable=SC2028
+[[ $newstring == "$expected" ]] || printf '%q\n' "expected \"$expected\", got \"$newstring\""
