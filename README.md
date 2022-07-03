@@ -6,7 +6,6 @@ It depends on a small number of commonly installed POSIX tools:
 
 * grep
 * sed
-* awk
 * getopt (extended)
 * flock (job-pool module only)
 * ssh (ControlMaster support required, rposh module only)
@@ -483,6 +482,6 @@ This module replaces the most common use cases of system `wc` with predictable f
 
 * poshlib currently only works reliably with `bash`, but it is intended to (eventually) also support other POSIX shells.
 * It is conventional for poshlib modules to prefix their public function member names with `module.` and public variable member names with `module_` or `MODULE_`.
-    The corresponding conventions for private members are `__module.` and `__module_` or `__MODULE_` respectively.
+    The corresponding conventions for private members are the same, but with leading underscores.
     If you are extending poshlib with your own modules, it is recommended to follow this convention.
     Some modules provide other public member names for backwards compatibility; these are all currently deprecated and will be removed in a future version.
