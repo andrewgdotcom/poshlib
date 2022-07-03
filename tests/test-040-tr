@@ -3,7 +3,6 @@ SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 # shellcheck disable=SC1090,SC1091
 . "${SCRIPT_DIR}/../poshlib.sh" || exit 1
 use swine
-use fakehash
 use tr
 
 # shellcheck disable=SC2154
