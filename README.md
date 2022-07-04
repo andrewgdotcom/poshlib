@@ -470,8 +470,7 @@ This can reduce resource usage in most cases.
 It implements the following stream-editing functions:
 
 * `tr.mapchar $old $new`
-    * Filters STDIN/OUT, replacing each instance of the characters in `$old` with the corresponding characters in `$new`.
-    * If `$old` is longer than `$new` then the excess characters will be deleted from the output.
+    * Filters STDIN/OUT, replacing each instance of the characters in `$old` with the corresponding characters in `$new`. If `$old` is longer than `$new` then the excess characters will be deleted from the output. Beware that it *does not* understand ranges or character classes.
 * `tr.strip`
     * Removes all leading and trailing whitespace (as defined by `IFS`) from the stream.
 

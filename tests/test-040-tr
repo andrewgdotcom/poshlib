@@ -6,9 +6,6 @@ use strict
 use utils
 use tr
 
-# shellcheck disable=SC2154
-echo tr uses "$__tr_implementation"
-
 string="MIXED_CASE-Example string"
 
 oldstring=$string
