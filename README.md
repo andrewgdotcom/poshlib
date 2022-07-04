@@ -323,22 +323,21 @@ Emulate an associative array using two regular arrays.
 It defines the following functions:
 
 * `fakehash.declare hash`
-    Declare a new fakehash.
+    * Declare a new fakehash.
 * `fakehash.get hash key [key ...]`
-    Dereferences the hash and prints the result on STDOUT
+    * Dereferences the hash and prints the result on STDOUT
 * `fakehash.read-a array hash key [key ...]`
-    Dereferences the hash (potentially with multiple keys) and writes them to `array`.
-    This is similar to the behaviour of `read -a`
+    * Dereferences the hash (potentially with multiple keys) and writes them to `array`. This is similar to the behaviour of `read -a`
 * `fakehash.keys.read-a array hash`
-    Writes the keys of the hash to `array`, similar to `read -a`.
+    * Writes the keys of the hash to `array`, similar to `read -a`.
 * `fakehash.update hash key=value [key=value ...]`
-    Updates `hash` by adding or modifying a key/value pair (or pairs).
+    * Updates `hash` by adding or modifying a key/value pair (or pairs).
 * `fakehash.remove hash key [key ...]`
-    Removes key/value pair(s) from `hash`.
+    * Removes key/value pair(s) from `hash`.
 * `fakehash.compact hash`
-    Recover space.
+    * Recover space.
 * `fakehash.unset hash`
-    Delete a fakehash.
+    * Delete a fakehash.
 
 The algorithm is inefficient and does not implement an actual hash, nor does it use sparse arrays consistently.
 The `fakehash.compact` function should be called to recover resources if a large number of keys have been deleted.
@@ -366,7 +365,7 @@ $pool_size is the number of workers, and $echo is "0" for silence or "1" otherwi
 It also defines the following public variables:
 
 * `$job_pool_nerrors`
-    the cumulative number of errors recorded by the previous run
+    * the cumulative number of errors recorded by the previous run
 
 ### keyval - tool to (more) safely read key-value pairs from shell-script-like files
 
@@ -471,10 +470,10 @@ This can reduce resource usage in most cases.
 It implements the following stream-editing functions:
 
 * `tr.mapchar $old $new`
-    Filters STDIN/OUT, replacing each instance of the characters in `$old` with the corresponding characters in `$new`.
-    If `$old` is longer than `$new` then the excess characters will be deleted from the output.
+    * Filters STDIN/OUT, replacing each instance of the characters in `$old` with the corresponding characters in `$new`.
+    * If `$old` is longer than `$new` then the excess characters will be deleted from the output.
 * `tr.strip`
-    Removes all leading and trailing whitespace (as defined by `IFS`) from the stream.
+    * Removes all leading and trailing whitespace (as defined by `IFS`) from the stream.
 
 Beware that non-default `IFS` may not behave as you expect if a trailing newline has been silently added by `echo` or `<<<`.
 For safety, you should always use `printf` with non-default `IFS`, e.g.
@@ -500,13 +499,13 @@ System-provided `wc` does not produce machine-readable output on all platforms.
 This module replaces the most common use cases of system `wc` with predictable forms:
 
 * `wc.words`
-    Counts the number of words on STDIN.
+    * Counts the number of words on STDIN.
 * `wc.lines`
-    Counts the number of line breaks on STDIN.
+    * Counts the number of line breaks on STDIN.
 * `wc.chars`
-    Counts the number of characters on STDIN.
+    * Counts the number of characters on STDIN.
 * `wc.count CHAR`
-    Counts the number of occurrences of CHAR in STDIN.
+    * Counts the number of occurrences of CHAR in STDIN.
 
 ## Notes
 
