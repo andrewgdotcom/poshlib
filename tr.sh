@@ -6,54 +6,6 @@
 # THIS IS INTENTIONAL as it should never be executed, only sourced.
 ################################################################################
 
-if
-    ( __tr_i=A; echo ${__tr_i,}; echo ${__tr_i//A/B} ) >/dev/null 2>&1
-then
-    __tr_implementation=native
-    tr.snake_case() {
-        fromvar=$1
-        tovar="${2:-"$1"}"
-        eval "__tr_temp=\${$fromvar//-/_}; $tovar=\${__tr_temp,,}"
-    }
-    tr.UPPER_SNAKE_CASE() {
-        fromvar=$1
-        tovar="${2:-"$1"}"
-        eval "__tr_temp=\${$fromvar//-/_}; $tovar=\${__tr_temp^^}"
-    }
-    tr.kebab-case() {
-        fromvar=$1
-        tovar="${2:-"$1"}"
-        eval "__tr_temp=\${$fromvar//_/-}; $tovar=\${__tr_temp,,}"
-    }
-    tr.UPPER-KEBAB-CASE() {
-        fromvar=$1
-        tovar="${2:-"$1"}"
-        eval "__tr_temp=\${$fromvar//_/-}; $tovar=\${__tr_temp^^}"
-    }
-else
-    __tr_implementation=external
-    tr.snake_case() {
-        fromvar=$1
-        tovar="${2:-"$1"}"
-        eval "$tovar=\$(tr A-Z- a-z_ <<<\"\$$fromvar\")"
-    }
-    tr.UPPER_SNAKE_CASE() {
-        fromvar=$1
-        tovar="${2:-"$1"}"
-        eval "$tovar=\$(tr a-z- A-Z_ <<<\"\$$fromvar\")"
-    }
-    tr.kebab-case() {
-        fromvar=$1
-        tovar="${2:-"$1"}"
-        eval "$tovar=\$(tr A-Z_ a-z- <<<\"\$$fromvar\")"
-    }
-    tr.UPPER-KEBAB-CASE() {
-        fromvar=$1
-        tovar="${2:-"$1"}"
-        eval "$tovar=\$(tr a-z_ A-Z- <<<\"\$$fromvar\")"
-    }
-fi
-
 tr.mapchar() {
     local old=$1
     local new=$2
@@ -71,7 +23,7 @@ tr.mapchar() {
                 chopnew=${chopnew#?}
                 chopold=${chopold#?}
             done
-            printf '%c' "$newchar"
+            [[ "$newchar" == $'\0' ]] || printf '%c' "$newchar"
         else
             printf '%c' "$char"
         fi
@@ -102,3 +54,69 @@ tr.strip() {
         fi
     done
 }
+
+if
+    ( __tr_i=A; echo ${__tr_i,}; echo ${__tr_i//A/B} ) >/dev/null 2>&1
+then
+    tr.lowercase() {
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "$tovar=\${$fromvar,,}"
+    }
+    tr.UPPERCASE() {
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "$tovar=\${$fromvar^^}"
+    }
+    tr.snake_case() {
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "__tr_temp=\${$fromvar//-/_}; $tovar=\${__tr_temp,,}"
+    }
+    tr.UPPER_SNAKE_CASE() {
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "__tr_temp=\${$fromvar//-/_}; $tovar=\${__tr_temp^^}"
+    }
+    tr.kebab-case() {
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "__tr_temp=\${$fromvar//_/-}; $tovar=\${__tr_temp,,}"
+    }
+    tr.UPPER-KEBAB-CASE() {
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "__tr_temp=\${$fromvar//_/-}; $tovar=\${__tr_temp^^}"
+    }
+else
+    tr.lowercase() {
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "$tovar=\$(tr.mapchar ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz <<<\"\$$fromvar\")"
+    }
+    tr.UPPERCASE() {
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "$tovar=\$(tr.mapchar abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ <<<\"\$$fromvar\")"
+    }
+    tr.snake_case() {
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "$tovar=\$(tr.mapchar ABCDEFGHIJKLMNOPQRSTUVWXYZ- abcdefghijklmnopqrstuvwxyz_ <<<\"\$$fromvar\")"
+    }
+    tr.UPPER_SNAKE_CASE() {
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "$tovar=\$(tr.mapchar abcdefghijklmnopqrstuvwxyz- ABCDEFGHIJKLMNOPQRSTUVWXYZ_ <<<\"\$$fromvar\")"
+    }
+    tr.kebab-case() {
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "$tovar=\$(tr.mapchar ABCDEFGHIJKLMNOPQRSTUVWXYZ_ abcdefghijklmnopqrstuvwxyz- <<<\"\$$fromvar\")"
+    }
+    tr.UPPER-KEBAB-CASE() {
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "$tovar=\$(tr.mapchar abcdefghijklmnopqrstuvwxyz_ ABCDEFGHIJKLMNOPQRSTUVWXYZ- <<<\"\$$fromvar\")"
+    }
+fi

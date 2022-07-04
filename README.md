@@ -470,8 +470,7 @@ This can reduce resource usage in most cases.
 It implements the following stream-editing functions:
 
 * `tr.mapchar $old $new`
-    * Filters STDIN/OUT, replacing each instance of the characters in `$old` with the corresponding characters in `$new`.
-    * If `$old` is longer than `$new` then the excess characters will be deleted from the output.
+    * Filters STDIN/OUT, replacing each instance of the characters in `$old` with the corresponding characters in `$new`. If `$old` is longer than `$new` then the excess characters will be deleted from the output. Beware that it *does not* understand ranges or character classes (but see below).
 * `tr.strip`
     * Removes all leading and trailing whitespace (as defined by `IFS`) from the stream.
 
@@ -482,8 +481,10 @@ For safety, you should always use `printf` with non-default `IFS`, e.g.
 printf '%s' "$string" | IFS=' ' tr.strip`
 ```
 
-`tr` also implements the following variable-manipulation functions:
+`tr` also implements the following variable-manipulation functions, for common use cases of character classes:
 
+* `tr.lowercase var [dest]`
+* `tr.UPPERCASE var [dest]`
 * `tr.kebab-case var [dest]`
 * `tr.snake_case var [dest]`
 * `tr.UPPER-KEBAB-CASE var [dest]`
@@ -492,6 +493,7 @@ printf '%s' "$string" | IFS=' ' tr.strip`
 They each take one argument, the name of a variable to modify.
 If a second variable name is given, the modified text is written to it.
 If no second variable name is given, the first variable is modified in-place.
+Note that these only manipulate the ASCII characters `[A-Za-z_-]`.
 
 ### wc - replace system `wc` with internal functions
 
