@@ -323,16 +323,25 @@ Emulate an associative array using two regular arrays.
 It defines the following functions:
 
 * `fakehash.declare hash`
+    Declare a new fakehash.
 * `fakehash.get hash key [key ...]`
+    Dereferences the hash and prints the result on STDOUT
 * `fakehash.read-a array hash key [key ...]`
+    Dereferences the hash (potentially with multiple keys) and writes them to `array`.
+    This is similar to the behaviour of `read -a`
 * `fakehash.keys.read-a array hash`
+    Writes the keys of the hash to `array`, similar to `read -a`.
 * `fakehash.update hash key=value [key=value ...]`
+    Updates `hash` by adding or modifying a key/value pair (or pairs).
 * `fakehash.remove hash key [key ...]`
+    Removes key/value pair(s) from `hash`.
 * `fakehash.compact hash`
+    Recover space.
 * `fakehash.unset hash`
+    Delete a fakehash.
 
-The algorithm is inefficient and does not implement an actual hash, nor does it use sparse arrays.
-There is a specific `fakehash.compact` function that should be called periodically to recover memory.
+The algorithm is inefficient and does not implement an actual hash, nor does it use sparse arrays consistently.
+The `fakehash.compact` function should be called to recover resources if a large number of keys have been deleted.
 
 ### flatten - convert a poshlib script with `use` dependencies into a flat script
 
@@ -404,7 +413,7 @@ main main_function "$@"
 ```
 
 This statement will invoke `main_function` with the script arguments IFF the script has been executed.
-If the script has been sourced or used, then it will do nothing and it is the responsibility of the sourcing script to invoke any functions at a later point.
+If the script has been `use`d, then `main` will do nothing and it is the responsibility of the calling script to invoke any functions at a later point.
 
 ### parse-opt - routines for parsing GNU-style longopts
 
@@ -423,7 +432,7 @@ parse-opt.flags FLAG [FLAG ...]
 eval "$(parse-opt-simple)"
 ```
 
-Any longopt arguments are excised from "$@" and their values assigned to shell variables, leaving only positional arguments in "$@".
+Any longopt arguments are excised from `$@` and their values assigned to shell variables, leaving only positional arguments in `$@`.
 The argument names are kebab-case, and the corresponding shell variables are UPPER_SNAKE_CASE, with an optional prefix for simple namespacing.
 
 See the comments at the top of parse-opt.sh for full usage instructions.
@@ -455,26 +464,15 @@ If you need to `try` a complex sequence of commands, wrap them in a function and
 
 ### tr - replace trivial calls to `tr` with internal functions where possible
 
-This module replaces some common uses of external `tr` with internal shell functions if the calling shell supports them.
+This module replaces some common uses of external `tr` with internal shell functions.
 Some older versions of `bash` (e.g. MacOS's v3.2) have limited native support for string manipulation.
 This can reduce resource usage in most cases.
 
-It implements the following variable-manipulation functions:
-
-* `tr.kebab-case var [dest]`
-* `tr.snake_case var [dest]`
-* `tr.UPPER-KEBAB-CASE var [dest]`
-* `tr.UPPER_SNAKE_CASE var [dest]`
-
-They each take one argument, the name of a variable to modify.
-If a second variable name is given, the modified text is written to it.
-If no second variable name is given, the first variable is modified in-place.
-
-It also implements the following stream-editing functions:
+It implements the following stream-editing functions:
 
 * `tr.mapchar $old $new`
     Filters STDIN/OUT, replacing each instance of the characters in `$old` with the corresponding characters in `$new`.
-    If `$old` is longer than `$new` then the extra characters will be deleted from the output.
+    If `$old` is longer than `$new` then the excess characters will be deleted from the output.
 * `tr.strip`
     Removes all leading and trailing whitespace (as defined by `IFS`) from the stream.
 
@@ -485,9 +483,20 @@ For safety, you should always use `printf` with non-default `IFS`, e.g.
 printf '%s' "$string" | IFS=' ' tr.strip`
 ```
 
+`tr` also implements the following variable-manipulation functions:
+
+* `tr.kebab-case var [dest]`
+* `tr.snake_case var [dest]`
+* `tr.UPPER-KEBAB-CASE var [dest]`
+* `tr.UPPER_SNAKE_CASE var [dest]`
+
+They each take one argument, the name of a variable to modify.
+If a second variable name is given, the modified text is written to it.
+If no second variable name is given, the first variable is modified in-place.
+
 ### wc - replace system `wc` with internal functions
 
-`wc` does not produce machine-readable output on all platforms.
+System-provided `wc` does not produce machine-readable output on all platforms.
 This module replaces the most common use cases of system `wc` with predictable forms:
 
 * `wc.words`
@@ -501,8 +510,9 @@ This module replaces the most common use cases of system `wc` with predictable f
 
 ## Notes
 
-* poshlib currently only works reliably with `bash`, but it is intended to (eventually) also support other POSIX shells.
+* poshlib currently only supports `bash`, but it may also support other POSIX shells in the future.
 * It is conventional for poshlib modules to prefix their public function member names with `module.` and public variable member names with `module_` or `MODULE_`.
     The corresponding conventions for private members are the same, but with leading underscores.
     If you are extending poshlib with your own modules, it is recommended to follow this convention.
     Some modules provide other public member names for backwards compatibility; these are all currently deprecated and will be removed in a future version.
+    The poshlib core prefixes its members with `__posh_`.
