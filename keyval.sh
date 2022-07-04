@@ -24,7 +24,8 @@ __keyval.sedescape() {
 }
 
 keyval.read() {(
-    use swine
+    use strict
+    use utils
     use parse-opt
 
     parse-opt.flags "STRIP"
@@ -57,7 +58,8 @@ keyval.import() {
 }
 
 keyval.add() {(
-    use swine
+    use strict
+    use utils
     use parse-opt
 
     parse-opt.flags "UPDATE MULTI MATCH_INDENT"
@@ -114,7 +116,8 @@ keyval.add() {(
 keyval-add () { keyval.add "$@" ;}
 
 keyval.update() {(
-    use swine
+    use strict
+    use utils
     use parse-opt
 
     parse-opt.flags "ADD MATCH_INDENT"
@@ -135,7 +138,8 @@ keyval.update() {(
 keyval-update () { keyval.update "$@" ;}
 
 keyval.delete() {(
-    use swine
+    use strict
+    use utils
     use parse-opt
 
     parse-opt.flags "COMMENT"

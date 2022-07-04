@@ -9,7 +9,8 @@
 ################################################################################
 
 flatten() { (
-    use swine
+    use strict
+    use utils
 
     [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: COMMAND: flatten $*"
 

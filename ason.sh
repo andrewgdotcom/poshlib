@@ -25,7 +25,8 @@ use ason/entities
 ########################################################################
 
 _REVEAL() {(
-    use swine
+    use strict
+    use utils
     string="$1"; shift
 
     # First substitute structure characters
@@ -72,7 +73,8 @@ _REVEAL() {(
 
 
 _QUOTE() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
 
     string="$1"
@@ -83,7 +85,8 @@ _QUOTE() {(
 )}
 
 _LIST() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
 
     __ason__begin_header "$_LIST"
@@ -97,7 +100,8 @@ _LIST() {(
 )}
 
 _DICT() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
 
     __ason__begin_header "$_DICT"
@@ -142,7 +146,8 @@ _DICT() {(
 )}
 
 _TABLE() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
@@ -170,14 +175,16 @@ _TABLE() {(
 
 
 _TYPE() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
 
     __ason__get_header_value "$1" "$_PAD"
 )}
 
 _LENGTH() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -206,7 +213,8 @@ _LENGTH() {(
 )}
 
 _WIDTH() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -255,7 +263,8 @@ _WIDTH() {(
 
 
 _GET() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -296,7 +305,8 @@ _GET() {(
 )}
 
 _VALUES() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -315,7 +325,8 @@ _VALUES() {(
 )}
 
 __READ_NOEVAL() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     varname="$1"; shift
     structure="$1"; shift
@@ -387,7 +398,8 @@ _FOREACH() {
 
 
 _KEYS() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -403,12 +415,14 @@ _KEYS() {(
 )}
 
 _COLUMNS() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
 _SLICE() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -424,12 +438,14 @@ _SLICE() {(
 )}
 
 _ROW() {
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 }
 
 _COLUMN() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
@@ -455,7 +471,8 @@ _COLUMN() {(
 
 
 _SPLIT() {(
-    use swine
+    use strict
+    use utils
 
     separator="$1"; shift
     string="$1"; shift
@@ -466,12 +483,14 @@ _SPLIT() {(
 )}
 
 _FOLIATE() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
 _LAMINATE() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
@@ -531,7 +550,8 @@ _LAMINATE() {(
 
 
 _SET() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -550,7 +570,8 @@ _SET() {(
 )}
 
 _POP() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -566,7 +587,8 @@ _POP() {(
 )}
 
 _SHIFT() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -582,7 +604,8 @@ _SHIFT() {(
 )}
 
 _PUSH() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -598,7 +621,8 @@ _PUSH() {(
 )}
 
 _UNSHIFT() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -614,7 +638,8 @@ _UNSHIFT() {(
 )}
 
 _PASTE() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -630,7 +655,8 @@ _PASTE() {(
 )}
 
 _CUT() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -646,7 +672,8 @@ _CUT() {(
 )}
 
 _CAT() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -662,7 +689,8 @@ _CAT() {(
 )}
 
 _APPEND() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -678,12 +706,14 @@ _APPEND() {(
 )}
 
 _SETROW() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
 _SETCOLUMN() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
@@ -714,32 +744,38 @@ _SETCOLUMN() {(
 
 
 _SELECT() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
 _UPDATE() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
 _DELETE() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
 _ALTER() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
 _SORT() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
 _JOIN() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 

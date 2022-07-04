@@ -10,7 +10,8 @@
 ################################################################################
 
 rscript() { (
-    use swine
+    use strict
+    use utils
     use flatten
     use parse-opt
     use job-pool

@@ -1,7 +1,8 @@
 #!/bin/bash
 # shellcheck disable=SC1090,SC1091
 . "$(dirname "${BASH_SOURCE[0]}")/../poshlib.sh" || exit 1
-use swine
+use strict
+use utils
 use wc
 use job-pool
 

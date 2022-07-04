@@ -208,8 +208,7 @@ Confusingly, `awk` will *NOT* generally return an error code on no match.
 
 #### Don't use `$?`
 
-If you need to distinguish between different nonzero return codes, the module `swine` implements a simple `try/catch` utility (see below).
-
+If you need to distinguish between different nonzero return codes, the module `utils` implements a simple `try/catch` utility (see below).
 
 #### Don't use `&&` as a guard operator
 
@@ -282,7 +281,7 @@ a=$(( b-c ))
 When complex commands, subshells, functions etc. are used in the conditional of a flow control command, all errors are discarded by the flow control statement.
 This is because flow control works by temporarily *globally* disabling error checking and then checking `$?` at the end of the conditional.
 
-The following are all *unsafe*:
+The following constructions may not do what you naively expect in `strict` mode:
 
 ```
 f() { false; true; }
@@ -292,14 +291,19 @@ fi
 if ( false; true; ); then
     do_something
 fi
-if { false; true; }; then
+while
+    false
+    true
+do
     do_something
-fi
+done
 ```
 
-This can lead to unexpected behaviour inside the function if its design assumes that it will return immediately on error.
+This can lead to unexpected behaviour inside the conditional if its design assumes that it will return immediately on error.
 
 https://fvue.nl/wiki/Bash:_Error_handling
+
+For a safer way to handle errors inside functions, see the `try` command in the `utils` module below.
 
 ### ansi - macro definitions for ANSI terminal formatting
 
@@ -430,9 +434,9 @@ This requires a version of ssh(1) that supports ControlMaster.
 
 * `rscript "$host" "$script"`
 
-### swine - make bash a little bit more like perl
+### utils - make bash a bit more like a real language
 
-This module sets strict mode (see above), and also defines some useful perl-like functions:
+This module defines some useful perl-like functions:
 
 * `say "$text"`
     * prints a line on STDOUT without parsing special characters
@@ -445,9 +449,9 @@ This module sets strict mode (see above), and also defines some useful perl-like
 * `contains "$string" "${values[@]}"`
     * succeeds if a string is contained in an array or list of strings (but BEWARE of null-safe expansions, see above)
 
-Note that try works by calling `eval` on its arguments, so they should be quoted accordingly.
-It does not work reliably on complex commands, subshells, or functions.
+Note that try works by calling `eval` on its arguments, so it does not work with complex commands, subshells, or functions.
 This is a design limitation of `bash`.
+If you need to `try` a complex sequence of commands, wrap them in a function and call that instead.
 
 ### tr - replace trivial calls to `tr` with internal functions where possible
 
