@@ -5,8 +5,6 @@
 # This allows for arbitrary objects to be passed as string variables,
 # or through pipelines.
 #
-# All functions are call by value, and are pure functions.
-#
 # The functions can be divided into constructors, metrics, getters,
 # conversions, and editors. These behave similarly across the different
 # types of structure.
@@ -27,21 +25,28 @@ use ason/entities
 ########################################################################
 
 _REVEAL() {(
-    use swine
+    use strict
+    use utils
     string="$1"; shift
 
     # First substitute structure characters
     for entityvar in __AS__SOH __AS__STX __AS__ETX __AS__EOT \
             __AS__FS __AS__GS __AS__RS __AS__US; do
+        # we can't replace this with shell native if we want to support bash 3.2
+        # shellcheck disable=SC2001
         string=$(sed "s/${!entityvar}/\\$\\{${entityvar}\\}/g" <<< "$string")
     done
 
     # Now find and substitute any _TC7_TC7 sequences
+    # we can't replace this with shell native if we want to support bash 3.2
+    # shellcheck disable=SC2001
     string=$(sed "s/${__AS__SEQ_INIT}${__AS__SEQ_INIT}[${__AS__SEQ_INIT}${_UNDEF}${_TRUE}${_FALSE}${_PAD}${_PARA}]*/\\$\\{__UNSUPPORTED_SEQUENCE__\\}/g" <<< "$string")
 
     # substitute the longer entities first, to prevent partial matches
     for entityvar in _QUOTE _LIST _DICT _TABLE _ARRAY \
             _UNDEF _TRUE _FALSE _PAD _PARA; do
+        # we can't replace this with shell native if we want to support bash 3.2
+        # shellcheck disable=SC2001
         string=$(sed "s/${!entityvar}/\\$\\{${entityvar}\\}/g" <<< "$string")
     done
     printf "%s" "$string"
@@ -68,7 +73,8 @@ _REVEAL() {(
 
 
 _QUOTE() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
 
     string="$1"
@@ -79,7 +85,8 @@ _QUOTE() {(
 )}
 
 _LIST() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
 
     __ason__begin_header "$_LIST"
@@ -93,7 +100,8 @@ _LIST() {(
 )}
 
 _DICT() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
 
     __ason__begin_header "$_DICT"
@@ -113,14 +121,14 @@ _DICT() {(
         while [ -z "$last" ]; do
             key="$(__ason__to_next "$__AS__US" "$keys")"
             # remove the found item and any subsequent separator
-            keys="${keys#$key}"
+            keys="${keys#"$key"}"
             [ -n "$keys" ] || last=1
-            keys="${keys#$__AS__US}"
+            keys="${keys#"$__AS__US"}"
             value="$(__ason__to_next "$__AS__US" "$values")"
             # remove the found item and any subsequent separator
-            values="${values#$value}"
+            values="${values#"$value"}"
             [ -n "$values" ] || last=1
-            values="${values#$__AS__US}"
+            values="${values#"$__AS__US"}"
             if [ -z "$start" ]; then
                 printf "%s" "$__AS__RS"
             else
@@ -138,7 +146,8 @@ _DICT() {(
 )}
 
 _TABLE() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
@@ -166,14 +175,16 @@ _TABLE() {(
 
 
 _TYPE() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
 
     __ason__get_header_value "$1" "$_PAD"
 )}
 
 _LENGTH() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -189,9 +200,9 @@ _LENGTH() {(
             item="$(__ason__to_next "$separator" "$stext")"
             [ "$item" != "$_UNDEF" ] || break
             (( ++count ))
-            stext="${stext#$item}"
+            stext="${stext#"$item"}"
             [ -n "$stext" ] || break
-            stext="${stext#$separator}"
+            stext="${stext#"$separator"}"
         done
         printf "%s" "$count"
         ;;
@@ -202,7 +213,8 @@ _LENGTH() {(
 )}
 
 _WIDTH() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -224,29 +236,35 @@ _WIDTH() {(
 #
 #   $(_GET "$structure" ["$subscript"] ["$key"])
 #   $(_VALUES "$structure")
-#   eval "$(_READ var "$structure")"
 #
 # _GET returns a single value from the structure.
 # If the parent structure is a _LIST, only $subscript is given.
 # If the parent structure is a _DICT, only $key is given.
 # If the parent structure is a _TABLE, both are given in the order
 # row, column ($subscript, $key).
-# If _GET is passed an invalid $subscript or $key, it returns $_UNDEF and a
-# nonzero exit code.
+# If _GET is passed an invalid $subscript or $key, it returns $_UNDEF
+# and a nonzero exit code.
 #
 # _VALUES returns all the values in $structure as a flat _LIST. If
 # $structure is itself a _LIST, it returns its argument unchanged.
 #
-# _READ returns a snippet of shell code suitable for passing to `eval`, which
-# assigns the values of a _LIST to the array `var`; it is analogous to
-# `read -a var <<< "$input"`. This is kludgy, but the only reliable way to
-# *selectively* word-split a substitution.
+# The following getters are defined for _LISTs:
+#
+#   _READ var "$structure"
+#   _FOREACH var [in] "$structure" command [args...]
+#
+# _READ assigns the values of a _LIST to the array `var` in the calling
+# context; it is analogous to `read -a var <<< "$input"`.
+#
+# _FOREACH runs the supplied command with `var` set to each member of
+# the list in turn. The command must be a one-liner.
 #
 ########################################################################
 
 
 _GET() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -261,9 +279,9 @@ _GET() {(
             item="$(__ason__to_next "$__AS__US" "$stext")"
             (( ++count ))
             # remove the found item and any subsequent separator
-            stext="${stext#$item}"
+            stext="${stext#"$item"}"
             [ -n "$stext" ] || break
-            stext="${stext#$__AS__US}"
+            stext="${stext#"$__AS__US"}"
         done
         if [ "$count" = "$subscript" ]; then
             printf "%s" "$(__ason__unpad "$item")"
@@ -287,7 +305,8 @@ _GET() {(
 )}
 
 _VALUES() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -305,8 +324,9 @@ _VALUES() {(
     esac
 )}
 
-_READ() {(
-    use swine
+__READ_NOEVAL() {(
+    use strict
+    use utils
     use ason/lowlevel
     varname="$1"; shift
     structure="$1"; shift
@@ -319,22 +339,31 @@ _READ() {(
         while true; do
             item=$(__ason__to_next "$__AS__US" "$stext")
             printf " %q" "$(__ason__unpad "$item")"
-            stext="${stext#$item}"
+            stext="${stext#"$item"}"
             [ -n "$stext" ] || break
-            stext="${stext#$__AS__US}"
+            stext="${stext#"$__AS__US"}"
         done
         printf " )"
         ;;
     "$_DICT" | "$_TABLE" | "$_ARRAY" )
         # Call _VALUES to convert to list, and recurse
         # TODO: This is inefficient, so rewrite at some point
-        _READ "$(_VALUES "$structure")"
+        __READ_NOEVAL "$(_VALUES "$structure")"
         ;;
     * )
         die 101 "Not implemented"
         ;;
     esac
 )}
+
+_READ() {
+    eval "$(__READ_NOEVAL "$@")"
+}
+
+_FOREACH() {
+    die 101 "Not implemented"
+}
+
 
 ########################################################################
 #
@@ -369,7 +398,8 @@ _READ() {(
 
 
 _KEYS() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -385,12 +415,14 @@ _KEYS() {(
 )}
 
 _COLUMNS() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
 _SLICE() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -406,12 +438,14 @@ _SLICE() {(
 )}
 
 _ROW() {
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 }
 
 _COLUMN() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
@@ -437,7 +471,8 @@ _COLUMN() {(
 
 
 _SPLIT() {(
-    use swine
+    use strict
+    use utils
 
     separator="$1"; shift
     string="$1"; shift
@@ -448,12 +483,14 @@ _SPLIT() {(
 )}
 
 _FOLIATE() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
 _LAMINATE() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
@@ -513,7 +550,8 @@ _LAMINATE() {(
 
 
 _SET() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -532,7 +570,8 @@ _SET() {(
 )}
 
 _POP() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -548,7 +587,8 @@ _POP() {(
 )}
 
 _SHIFT() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -564,7 +604,8 @@ _SHIFT() {(
 )}
 
 _PUSH() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -580,7 +621,8 @@ _PUSH() {(
 )}
 
 _UNSHIFT() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -596,7 +638,8 @@ _UNSHIFT() {(
 )}
 
 _PASTE() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -612,7 +655,8 @@ _PASTE() {(
 )}
 
 _CUT() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -628,7 +672,8 @@ _CUT() {(
 )}
 
 _CAT() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -644,7 +689,8 @@ _CAT() {(
 )}
 
 _APPEND() {(
-    use swine
+    use strict
+    use utils
     use ason/lowlevel
     structure="$1"; shift
     type="$(_TYPE "$structure")"
@@ -660,12 +706,14 @@ _APPEND() {(
 )}
 
 _SETROW() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
 _SETCOLUMN() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
@@ -696,32 +744,38 @@ _SETCOLUMN() {(
 
 
 _SELECT() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
 _UPDATE() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
 _DELETE() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
 _ALTER() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
 _SORT() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 
 _JOIN() {(
-    use swine
+    use strict
+    use utils
     die 101 "Not implemented"
 )}
 

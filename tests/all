@@ -1,9 +1,12 @@
 #!/bin/bash
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090,SC1091
 . "${SCRIPT_DIR}/../poshlib.sh" || exit 1
-use swine
+use strict
+use utils
 
 for i in "$SCRIPT_DIR"/test-*; do
-	$i || echo "$i failed!"
+	[[ -x $i ]] || continue
+	echo "Running $i"
+	$i || echo "$i failed in bash version ${BASH_VERSION}!"
 done

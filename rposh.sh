@@ -10,23 +10,23 @@
 ################################################################################
 
 rscript() { (
-    use swine
+    use strict
+    use utils
     use flatten
     use parse-opt
     use job-pool
 
     [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: COMMAND: rscript $*"
 
-    # shellcheck disable=SC2034
-    PO_SIMPLE_PREFIX="RPOSH_"
-    # shellcheck disable=SC2034
-    PO_SIMPLE_PARAMS="SUDO_USER SSH_USER SSH_OPTIONS SSH_KEEPALIVE STDOUT_DIR STDERR_DIR THREADS"
+    parse-opt.prefix "RPOSH_"
+    parse-opt.params "SUDO_USER SSH_USER SSH_OPTIONS SSH_KEEPALIVE STDOUT_DIR STDERR_DIR THREADS"
     eval "$(parse-opt-simple)"
 
     host_list="$1"; shift
     command="$1"; shift
     base_command=$(basename "$command")
 
+    # shellcheck disable=SC2034
     error_log=""
 
     ssh_options=("-o" "ControlPersist=${RPOSH_SSH_KEEPALIVE:-60}" \
@@ -36,11 +36,11 @@ rscript() { (
     IFS=, read -r -a hosts <<< "$host_list"
     # parse RPOSH_SSH_OPTIONS into an array, and intersperse them with "-o" flags
     IFS=, read -r -a ssh_key_values <<< "${RPOSH_SSH_OPTIONS:-}"
-    for option in "${ssh_key_values[@]}"; do
-        ssh_options=("${ssh_options[@]}" "-o" "$option")
+    for option in ${ssh_key_values+"${ssh_key_values[@]}"}; do
+        ssh_options+=("-o" "$option")
     done
     if [ -n "${RPOSH_SSH_USER:-}" ]; then
-        ssh_options=("${ssh_options[@]}" "-o" "User=${RPOSH_SSH_USER}")
+        ssh_options+=("-o" "User=${RPOSH_SSH_USER}")
     fi
     if [ -n "${RPOSH_SUDO_USER:-}" ]; then
         pre_command=("sudo" "-u" "${RPOSH_SUDO_USER}" "--")
@@ -84,15 +84,14 @@ rscript() { (
             try ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" \
                 -- "$target" "exit 0" >/dev/null 2>&1
             if catch e; then
-                # shellcheck disable=SC2154
                 warn "Error $e establishing connection to $target"
                 return
             fi
         fi
 
         # redirect stdout and stderr as required
-        stdout_dev=/proc/self/fd/1
-        stderr_dev=/proc/self/fd/2
+        stdout_dev=/dev/fd/1
+        stderr_dev=/dev/fd/2
         [ -z "${RPOSH_STDOUT_DIR:-}" ] || stdout_dev="$RPOSH_STDOUT_DIR/$target.stdout"
         [ -z "${RPOSH_STDERR_DIR:-}" ] || stderr_dev="$RPOSH_STDERR_DIR/$target.stderr"
 
@@ -118,19 +117,21 @@ rscript() { (
         fi
     }
 
+    job_pool_nerrors=0
     # initialise threadpool
-    job_pool_init "${RPOSH_THREADS:-1}" "${POSH_DEBUG:-}"
+    job-pool.init "${RPOSH_THREADS:-1}" "${POSH_DEBUG:-}"
 
     for target in "${hosts[@]}"; do
         # skip empty array elements, these can be created by trailing commas
         [ -n "$target" ] || continue
-        job_pool_run invoke_remote "$target" "$@"
+        job-pool.run invoke_remote "$target" "$@"
     done
 
     # wait and clean up
-    try job_pool_shutdown
+    try job-pool.shutdown
     if catch e; then
         warn "Error $e shutting down threadpool"
     fi
-    exit $job_pool_nerrors
+    # shellcheck disable=SC2154
+    exit "$job_pool_nerrors"
 ) }

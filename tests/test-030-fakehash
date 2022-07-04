@@ -1,0 +1,74 @@
+#!/bin/bash
+
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+# shellcheck disable=SC1090,SC1091
+. "$SCRIPT_DIR/../poshlib.sh" || exit 1
+use strict
+use utils
+use fakehash
+
+fakehash.declare A
+declare -a got expected
+
+testkeys=( key1 key2 '--bar=testing wibble "  "' ' ' )
+testvalues=( value1 value2 '' 'man, this is tricky' )
+
+[[ $(fakehash.get A key1) == "" ]] || echo "did not get nonexistent key"
+
+fakehash.update A "${testkeys[0]}" "${testvalues[0]}"
+
+[[ $(fakehash.get A "${testkeys[0]}") == "${testvalues[0]}" ]] || echo "read failure"
+
+fakehash.update A "${testkeys[1]}" "${testvalues[1]}" "${testkeys[2]}" "${testvalues[2]}" "${testkeys[3]}" "${testvalues[3]}" 
+fakehash.keys.read-a got A
+for i in 0 1 2 3; do
+    [[ "${got["$i"]}" == "${testkeys["$i"]}" ]] || echo "element $i: got '${got["$i"]}', expected '${testkeys["$i"]}'"
+done
+
+fakehash.read-a got A "${testkeys[0]}" "${testkeys[3]}"
+expected=( "${testvalues[0]}" "${testvalues[3]}" )
+for i in 0 1; do
+    [[ "${got["$i"]}" == "${expected["$i"]}" ]] || echo "element $i: got '${got["$i"]}', expected '${expected["$i"]}'"
+done
+
+fakehash.remove A "${testkeys[0]}"
+[[ $(fakehash.get A "${testkeys[0]}") == "" ]] || echo "'${testkeys[0]}' not deleted"
+[[ $(fakehash.get A "${testkeys[1]}") == "${testvalues[1]}" ]] || echo "'${testkeys[1]}' was incorrectly deleted"
+unset "testkeys[0]"
+testkeys=("${testkeys[@]}") # compact to left
+unset "testvalues[0]"
+testvalues=("${testvalues[@]}") # compact to left
+
+testvalues[0]="newvalue"
+fakehash.update A "${testkeys[0]}" "${testvalues[0]}"
+[[ $(fakehash.get A "${testkeys[0]}") == "${testvalues[0]}" ]] || echo "got '$(fakehash.get A "${testkeys[0]}")', expected '${testvalues[0]}'"
+
+fakehash.compact A
+
+[[ $(fakehash.get A "${testkeys[1]}") == "${testvalues[1]}" ]] || echo "compact caused data loss"
+
+fakehash.keys.read-a got A
+for i in 0 1 2; do
+    gotkey=${got["$i"]}
+    [[ "$gotkey" == "${testkeys["$i"]}" ]] || echo "key $i: got '${gotkey}', expected '${testkeys["$i"]}'"
+    gotvalue=$(fakehash.get A "${got["$i"]}")
+    [[ "$gotvalue" == "${testvalues["$i"]}" ]] || echo "value $i: got '$gotvalue', expected '${testvalues["$i"]}'"
+done
+
+# shellcheck disable=SC2154
+[[ ${#__fakehash_A_keys[@]} == 3 ]] || echo "did not compact, ${#__fakehash_A_keys[@]} key slots used"
+
+fakehash.remove A "${testkeys[0]}" "${testkeys[1]}"
+
+[[ $(fakehash.get A "${testkeys[0]}") == "" ]] || echo "'${testkeys[0]}' not deleted"
+[[ $(fakehash.get A "${testkeys[1]}") == "" ]] || echo "'${testkeys[1]}' not deleted"
+[[ $(fakehash.get A "${testkeys[2]}") == "${testvalues[2]}" ]] || echo "'${testkeys[2]}' was incorrectly deleted"
+
+fakehash.update A key1 value1 key2 value2
+
+# shellcheck disable=SC2154
+[[ ${#__fakehash_A_keys[@]} == 3 ]] || echo "did not use empty slots, ${#__fakehash_A_keys[@]} key slots used"
+
+fakehash.unset A
+
+exit 0

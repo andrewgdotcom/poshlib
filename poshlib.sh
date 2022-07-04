@@ -84,8 +84,8 @@ __posh__descend() {
             local safe_module
             safe_module=$(echo "$dir/$module.sh" | tr : _)
             # prevent loops
-            [ "${stack#$safe_module:}" == "$stack" ] || return 0
-            [ "${stack#*:$safe_module:}" == "$stack" ] || return 0
+            [ "${stack#"$safe_module:"}" == "$stack" ] || return 0
+            [ "${stack#*":$safe_module:"}" == "$stack" ] || return 0
             stack="$safe_module:$stack"
             eval "$stack_variable=\"$stack\"" # NASTY
             [ -z "${POSH_DEBUG:-}" ] || echo "# POSH_DEBUG: $stack_variable=$stack" >&2

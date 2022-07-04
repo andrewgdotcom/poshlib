@@ -24,6 +24,8 @@
 ########################################################################
 
 use ason/entities
+use tr
+use wc
 
 # Tests
 
@@ -50,9 +52,9 @@ __ason__is_entity() {
 }
 
 __ason__is_element() {
-    __ason__header="${1%%${__AS__STX}*}"
+    __ason__header="${1%%"${__AS__STX}"*}"
     [ "$__ason__header" == "$1" ] || return 1
-    __ason__footer="${1##*${__AS__ETX}}"
+    __ason__footer="${1##*"${__AS__ETX}"}"
     [ "$__ason__footer" == "$1" ] || return 1
 
     # TODO: check also for structure characters
@@ -60,13 +62,13 @@ __ason__is_element() {
 }
 
 __ason__is_structure() {
-    __ason__header="${1%%${__AS__STX}*}"
+    __ason__header="${1%%"${__AS__STX}"*}"
     [ "$__ason__header" != "$1" ] || return 1
-    __ason__footer="${1##*${__AS__ETX}}"
+    __ason__footer="${1##*"${__AS__ETX}"}"
     [ "$__ason__footer" != "$1" ] || return 1
 
-    [ "$__ason__header#${__AS__SOH}${_PAD}${__AS__US}" != "$__ason__header" ] || return 1
-    [ "$__ason__footer%${__AS__EOT}" != "$__ason__footer" ] || return 1
+    [ "${__ason__header#"${__AS__SOH}${_PAD}${__AS__US}"}" != "$__ason__header" ] || return 1
+    [ "${__ason__footer%"${__AS__EOT}"}" != "$__ason__footer" ] || return 1
 
     # TODO: check also proper nesting
     return 0
@@ -96,8 +98,8 @@ __ason__dim_slice_def() {
 }
 
 __ason__get_header_keys() {
-    __ason__header="${1%%${__AS__STX}*}"
-    __ason__header="${__ason__header#${__AS__SOH}*}"
+    __ason__header="${1%%"${__AS__STX}"*}"
+    __ason__header="${__ason__header#*"${__AS__SOH}"}"
     if [ "$__ason__header" == "$1" ]; then
         printf "%s" "$_UNDEF"
         return 1
@@ -107,35 +109,35 @@ __ason__get_header_keys() {
 
     __ason__first=1
     while
-        __ason__pair="${__ason__header%%${__AS__RS}*}"
-        __ason__key="${__ason__pair%%${__AS__US}*}"
+        __ason__pair="${__ason__header%%"${__AS__RS}"*}"
+        __ason__key="${__ason__pair%%"${__AS__US}"*}"
         [ -n "$__ason__first" ] || printf "%s" "$__AS__US"
         printf "%s" "$(__ason__pad "$__ason__key")"
     [ "$__ason__pair" != "$__ason__header" ]; do
         # discard the first key/value pair
-        __ason__header="${__ason__header#*${__AS__RS}}"
+        __ason__header="${__ason__header#*"${__AS__RS}"}"
         __ason__first=
     done
     __ason__end
 }
 
 __ason__get_header_value() {
-    __ason__header="${1%%${__AS__STX}*}"
-    __ason__header="${__ason__header#${__AS__SOH}*}"
+    __ason__header="${1%%"${__AS__STX}"*}"
+    __ason__header="${__ason__header#*"${__AS__SOH}"}"
     if [ "$__ason__header" == "$1" ]; then
         printf "%s" "$_UNDEF"
         return 1
     fi
     while
-        __ason__pair="${__ason__header%%${__AS__RS}*}"
-        __ason__key="${__ason__pair%%${__AS__US}*}"
+        __ason__pair="${__ason__header%%"${__AS__RS}"*}"
+        __ason__key="${__ason__pair%%"${__AS__US}"*}"
         if [ "$__ason__key" == "$2" ]; then
-            printf "%s" "${__ason__pair#*${__AS__US}}"
+            printf "%s" "${__ason__pair#*"${__AS__US}"}"
             return 0
         fi
     [ "$__ason__pair" != "$__ason__header" ]; do
         # discard the first key/value pair
-        __ason__header="${__ason__header#*${__AS__RS}}"
+        __ason__header="${__ason__header#*"${__AS__RS}"}"
     done
     printf "%s" "$_UNDEF"
     return 0
@@ -143,16 +145,16 @@ __ason__get_header_value() {
 
 __ason__get_stext() {
     # strip header and closing delimiter, which MUST exist
-    __ason__temp="${1#*$__AS__STX}"
+    __ason__temp="${1#*"${__AS__STX}"}"
     [ "$__ason__temp" != "$1" ] || return 1
-    __ason__stext="${__ason__temp%$__AS__EOT}"
+    __ason__stext="${__ason__temp%"${__AS__EOT}"}"
     [ "$__ason__stext" != "$__ason__temp" ] || return 1
     # remove footer IFF it exists
-    __ason__footer="${__ason__stext##*$__AS__ETX}"
+    __ason__footer="${__ason__stext##*"${__AS__ETX}"}"
     if [ "$__ason__footer" != "$__ason__stext" ]; then
         # make sure we've detected our own footer and not a child's
-        if [ "${__ason__footer%$__AS__EOT*}" = "$__ason__footer" ]; then
-            __ason__stext="${__ason__stext%$__ason__footer}"
+        if [ "${__ason__footer%"${__AS__EOT}"*}" = "$__ason__footer" ]; then
+            __ason__stext="${__ason__stext%"${__ason__footer}"}"
         fi
     fi
     printf "%s" "$__ason__stext"
@@ -166,7 +168,9 @@ __ason__pad() {
 }
 
 __ason__unpad() {
-    printf "%s" "$1" | sed "s/^[ \\t]*//; s/^$_PAD//; s/[ \\t]*$//; s/$_PAD$//"
+    # tr.strip actually deletes one or more contiguous $_PAD characters.
+    # They SHOULD NOT appear, so this is lenient but not strictly wrong.
+    printf "%s" "$1" | IFS=$' \t' tr.strip | IFS="$_PAD" tr.strip
 }
 
 __ason__join() {
@@ -212,8 +216,8 @@ __ason__end() {
 # NOTE that $text is NOT a whole structure; just the htext, stext, or ftext.
 #
 # Detecting the end of the stext is the calling routine's responsibility!
-# The calling routine SHOULD invoke ${text#$result}, THEN test for empty, AND
-# THEN invoke ${text#$separator}, because a trailing separator means that
+# The calling routine SHOULD invoke ${text#"$result"}, THEN test for empty, AND
+# THEN invoke ${text#"$separator"}, because a trailing separator means that
 # another value exists, but is the null string.
 
 __ason__to_next() {
@@ -223,14 +227,14 @@ __ason__to_next() {
     __ason__depth=0
     __ason__result=""
     while
-        __ason__chunk="${__ason__text%%${__ason__separator}*}"
+        __ason__chunk="${__ason__text%%"${__ason__separator}"*}"
         __ason__result="${__ason__result}${__ason__chunk}"
-        __ason__text="${__ason__text#*${__ason__separator}}"
+        __ason__text="${__ason__text#*"${__ason__separator}"}"
 
         # find (number of __AS__SOH) minus (number of __AS__EOT) in chunk
-        __ason__opens=$(tr -c -d "$__AS__SOH" <<< "$__ason__chunk" | wc -c)
-        __ason__closes=$(tr -c -d "$__AS__EOT" <<< "$__ason__chunk" | wc -c)
-        (( __ason__depth=__ason__depth+__ason__opens-__ason__closes ))
+        __ason__opens=$(wc.count "$__AS__SOH" <<< "$__ason__chunk")
+        __ason__closes=$(wc.count "$__AS__EOT" <<< "$__ason__chunk")
+        __ason__depth=$(( __ason__depth+__ason__opens-__ason__closes ))
 
         # if __ason__depth < 0, our ASON does not nest properly; abort
         [ "$__ason__depth" -ge 0 ] || return 1
