@@ -58,6 +58,16 @@ tr.strip() {
 if
     ( __tr_i=A; echo ${__tr_i,}; echo ${__tr_i//A/B} ) >/dev/null 2>&1
 then
+    tr.lowercase() {
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "$tovar=\${$fromvar,,}"
+    }
+    tr.UPPERCASE() {
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "$tovar=\${$fromvar^^}"
+    }
     tr.snake_case() {
         fromvar=$1
         tovar="${2:-"$1"}"
@@ -79,6 +89,16 @@ then
         eval "__tr_temp=\${$fromvar//_/-}; $tovar=\${__tr_temp^^}"
     }
 else
+    tr.lowercase() {
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "$tovar=\$(tr.mapchar ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz <<<\"\$$fromvar\")"
+    }
+    tr.UPPERCASE() {
+        fromvar=$1
+        tovar="${2:-"$1"}"
+        eval "$tovar=\$(tr.mapchar abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ <<<\"\$$fromvar\")"
+    }
     tr.snake_case() {
         fromvar=$1
         tovar="${2:-"$1"}"
