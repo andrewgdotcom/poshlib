@@ -64,7 +64,7 @@ fakehash.unset expected_output
 
 parse-opt.prefix "TEST_"
 parse-opt.flags "Verbose fORce"
-parse-opt.params "OUTPUT input"
+parse-opt.params OUTPUT input
 
 fakehash.declare expected_output
 
