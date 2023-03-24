@@ -72,7 +72,7 @@ function _job_pool.flock()
 function _job_pool.echo()
 {
     if [[ "${_job_pool_echo_command}" ]]; then
-        printf "%s" "$*" >&2
+        printf "%s\n" "$*" >&2
     fi
 }
 
