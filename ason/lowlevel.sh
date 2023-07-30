@@ -168,14 +168,14 @@ __ason__wrap() {
 }
 
 __ason__unwrap() {
-    local re_leading="^([^$__AS__RESERVED]*$__AS__CAN)"
-    local re_trailing="($__AS__EM[^$__AS__RESERVED]*)\$"
+    local re_leading="^([^${__AS__RESERVED}]*${__AS__CAN})"
+    local re_trailing="(${__AS__EM}[^${__AS__RESERVED}]*)\$"
     local value=$1
     if [[ $value =~ $re_leading ]]; then
-        value=${value#${BASH_REMATCH[1]}}
+        value=${value#"${BASH_REMATCH[1]}"}
     fi
     if [[ $value =~ $re_trailing ]]; then
-        value=${value%${BASH_REMATCH[1]}}
+        value=${value%"${BASH_REMATCH[1]}"}
     fi
     printf "%s" "$value"
 }
