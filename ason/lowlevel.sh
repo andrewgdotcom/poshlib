@@ -31,7 +31,7 @@ use wc
 
 __ason__is_plaintext_entity() {
     case "$1" in
-    "$_UNDEF" | "$_TRUE" | "$_FALSE" | "$_PAD" | "$_PARA" )
+    "$_UNDEF" | "$_TRUE" | "$_FALSE" | "$_DLE" | "$_PAD" | "$_PARA" )
         return 0
         ;;
     esac
@@ -40,7 +40,7 @@ __ason__is_plaintext_entity() {
 
 __ason__is_type_entity() {
     case "$1" in
-    "$_QUOTE" | "$_LIST" | "$_DICT" | "$_TABLE" | "$_ARRAY" )
+    "$_QUOTE" | "$_LIST" | "$_OBJECT" | "$_DICT" | "$_TABLE" | "$_ARRAY" )
         return 0
         ;;
     esac
@@ -112,7 +112,7 @@ __ason__get_header_keys() {
         __ason__pair="${__ason__header%%"${__AS__RS}"*}"
         __ason__key="${__ason__pair%%"${__AS__US}"*}"
         [ -n "$__ason__first" ] || printf "%s" "$__AS__US"
-        printf "%s" "$(__ason__pad "$__ason__key")"
+        printf "%s" "$(__ason__wrap "$__ason__key")"
     [ "$__ason__pair" != "$__ason__header" ]; do
         # discard the first key/value pair
         __ason__header="${__ason__header#*"${__AS__RS}"}"
@@ -163,25 +163,32 @@ __ason__get_stext() {
 
 # Construction helpers
 
-__ason__pad() {
-    printf "%s" "$_PAD$1$_PAD"
+__ason__wrap() {
+    printf "%s" "$__AS__CAN$1$__AS__EM"
 }
 
-__ason__unpad() {
-    # tr.strip actually deletes one or more contiguous $_PAD characters.
-    # They SHOULD NOT appear, so this is lenient but not strictly wrong.
-    printf "%s" "$1" | IFS=$' \t' tr.strip | IFS="$_PAD" tr.strip
+__ason__unwrap() {
+    local re_leading="^([^${__AS__RESERVED}]*${__AS__CAN})"
+    local re_trailing="(${__AS__EM}[^${__AS__RESERVED}]*)\$"
+    local value=$1
+    if [[ $value =~ $re_leading ]]; then
+        value=${value#"${BASH_REMATCH[1]}"}
+    fi
+    if [[ $value =~ $re_trailing ]]; then
+        value=${value%"${BASH_REMATCH[1]}"}
+    fi
+    printf "%s" "$value"
 }
 
 __ason__join() {
-    __ason__pad="$1"; shift
+    __ason__wrap="$1"; shift
     __ason__separator="$1"; shift
     __ason__item="${1:-}"
     if shift; then
-        [ "$__ason__pad" != "pad" ] || __ason__pad "$__ason__item"
+        [ "$__ason__wrap" != "pad" ] || __ason__wrap "$__ason__item"
         for __ason__item in "$@"; do
             printf "%s" "$__ason__separator"
-            [ "$__ason__pad" != "pad" ] || __ason__pad "$__ason__item"
+            [ "$__ason__wrap" != "pad" ] || __ason__wrap "$__ason__item"
         done
     fi
 }

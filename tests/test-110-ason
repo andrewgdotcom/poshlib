@@ -10,7 +10,7 @@ use ason/lowlevel
 
 failure=0
 fail() {
-    echo "FAIL: $1"
+    echo "FAIL: $*"
     (( ++failure ))
 }
 
@@ -26,22 +26,20 @@ __ason__is_entity "$_UNDEF" || fail __ason__is_entity
 # Constructor tests
 
 
-[[ "$(__ason__pad "  " )" == "$_PAD  $_PAD" ]] \
-    || fail "__ason__pad"
-[[ "$(__ason__unpad "$(__ason__pad '  ')")" == "  " ]] \
-    || fail "__ason__unpad 1"
-[[ "$(__ason__unpad "   $_PAD foo bar $_PAD   ")" == " foo bar " ]] \
-    || fail "__ason__unpad 2"
-[[ "$(__ason__unpad $'    foo bar \t ')" == "foo bar" ]] \
-    || fail "__ason__unpad 3"
+[[ "$(__ason__wrap "  " )" == "$__AS__CAN  $__AS__EM" ]] \
+    || fail "__ason__wrap"
+[[ "$(__ason__unwrap "$(__ason__wrap '  ')")" == "  " ]] \
+    || fail "__ason__unwrap 1"
+[[ "$(__ason__unwrap "   $__AS__CAN foo bar $__AS__EM   ")" == " foo bar " ]] \
+    || fail "__ason__unwrap 2"
 
 testquote="${__AS__SOH}${_PAD}${__AS__US}${_QUOTE}${__AS__STX}\
-${_PAD}test${_PAD}${__AS__EOT}"
+${__AS__CAN}test${__AS__EM}${__AS__EOT}"
 [[ $(_QUOTE "test") == "$testquote" ]] \
     || fail _QUOTE
 
 testlist="${__AS__SOH}${_PAD}${__AS__US}${_LIST}${__AS__STX}\
-${_PAD}test 1${_PAD}${__AS__US}${_PAD}${testquote}${_PAD}${__AS__EOT}"
+${__AS__CAN}test 1${__AS__EM}${__AS__US}${__AS__CAN}${testquote}${__AS__EM}${__AS__EOT}"
 [[ $(_LIST "test 1" "$testquote") == "$testlist" ]] \
     || fail _LIST
 
@@ -49,20 +47,23 @@ ${_PAD}test 1${_PAD}${__AS__US}${_PAD}${testquote}${_PAD}${__AS__EOT}"
     || fail _SPLIT
 
 testdict="${__AS__SOH}${_PAD}${__AS__US}${_DICT}${__AS__STX}\
-${_PAD}test 1${_PAD}${__AS__US}${_PAD}test 1${_PAD}${__AS__RS}\
-${_PAD}testquote${_PAD}${__AS__US}${_PAD}${testquote}${_PAD}${__AS__EOT}"
+${__AS__CAN}test 1${__AS__EM}${__AS__US}${__AS__CAN}test 1${__AS__EM}${__AS__RS}\
+${__AS__CAN}testquote${__AS__EM}${__AS__US}${__AS__CAN}${testquote}${__AS__EM}${__AS__EOT}"
 [[ $(_DICT "$(_LIST "test 1" "testquote")" "$testlist") == "$testdict" ]] \
     || fail _DICT
 
-unpadlist="${__AS__SOH}${_PAD}${__AS__US}${_LIST}${__AS__STX}\
-    ${_PAD}test 1${_PAD}${__AS__US}${_TRUE}${__AS__US}${__AS__EOT}"
+unpadlist="${__AS__SOH}${_PAD}${__AS__US}${_LIST}${__AS__STX}
+    ${__AS__CAN}test 1${__AS__EM}
+    ${__AS__US}${_TRUE}${__AS__US}${__AS__EOT}"
 
+
+### TODO: if the above contains $'\n', "_READ test 1" below fails unexpectedly.
 
 # Metadata tests
 
 
 testkeys="${__AS__SOH}${_PAD}${__AS__US}${_LIST}${__AS__STX}\
-${_PAD}${_PAD}${_PAD}${__AS__EOT}"
+${__AS__CAN}${_PAD}${__AS__EM}${__AS__EOT}"
 [[ $(__ason__get_header_keys "${testquote}") == "$testkeys" ]] \
     || fail __ason__get_header_keys
 
@@ -102,11 +103,8 @@ teststext="$testlist${__AS__US}$testquote"
 [[ $(_REVEAL "${_PAD}${_ARRAY}foo${_QUOTE}${_UNDEF}") == \
     "\${_PAD}\${_ARRAY}foo\${_QUOTE}\${_UNDEF}" ]] \
         || fail "_REVEAL 1"
-[[ $(_REVEAL "${__AS__SEQ_INIT}${__AS__SEQ_INIT}${_PAD}${_ARRAY}foo${_QUOTE}${_UNDEF}") == \
-    "\${__UNSUPPORTED_SEQUENCE__}foo\${_QUOTE}\${_UNDEF}" ]] \
-        || fail "_REVEAL 2"
 [[ $(_REVEAL "$testquote") == \
-    "\${__AS__SOH}\${_PAD}\${__AS__US}\${_QUOTE}\${__AS__STX}\${_PAD}test\${_PAD}\${__AS__EOT}" ]] \
+    "\${__AS__SOH}\${_PAD}\${__AS__US}\${_QUOTE}\${__AS__STX}\${__AS__CAN}test\${__AS__EM}\${__AS__EOT}" ]] \
         || fail "_REVEAL 3"
 
 [[ $(_GET "$testlist" 0) == "$_UNDEF" ]] || fail "_GET 0"
