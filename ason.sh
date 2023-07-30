@@ -31,20 +31,16 @@ _REVEAL() {(
 
     # First substitute structure characters
     for entityvar in __AS__SOH __AS__STX __AS__ETX __AS__EOT \
+            __AS__CAN __AS__EM \
             __AS__FS __AS__GS __AS__RS __AS__US; do
         # we can't replace this with shell native if we want to support bash 3.2
         # shellcheck disable=SC2001
         string=$(sed "s/${!entityvar}/\\$\\{${entityvar}\\}/g" <<< "$string")
     done
 
-    # Now find and substitute any _TC7_TC7 sequences
-    # we can't replace this with shell native if we want to support bash 3.2
-    # shellcheck disable=SC2001
-    string=$(sed "s/${__AS__SEQ_INIT}${__AS__SEQ_INIT}[${__AS__SEQ_INIT}${_UNDEF}${_TRUE}${_FALSE}${_PAD}${_PARA}]*/\\$\\{__UNSUPPORTED_SEQUENCE__\\}/g" <<< "$string")
-
     # substitute the longer entities first, to prevent partial matches
-    for entityvar in _QUOTE _LIST _DICT _TABLE _ARRAY \
-            _UNDEF _TRUE _FALSE _PAD _PARA; do
+    for entityvar in _QUOTE _LIST _OBJECT _DICT _TABLE _ARRAY \
+            _UNDEF _TRUE _DLE _FALSE _PAD _PARA; do
         # we can't replace this with shell native if we want to support bash 3.2
         # shellcheck disable=SC2001
         string=$(sed "s/${!entityvar}/\\$\\{${entityvar}\\}/g" <<< "$string")
@@ -80,7 +76,7 @@ _QUOTE() {(
     string="$1"
     __ason__begin_header "$_QUOTE"
     __ason__begin_text
-    __ason__pad "$string"
+    __ason__wrap "$string"
     __ason__end
 )}
 
@@ -284,7 +280,7 @@ _GET() {(
             stext="${stext#"$__AS__US"}"
         done
         if [ "$count" = "$subscript" ]; then
-            printf "%s" "$(__ason__unpad "$item")"
+            printf "%s" "$(__ason__unwrap "$item")"
         else
             printf "%s" "$_UNDEF"
         fi
@@ -338,7 +334,7 @@ __READ_NOEVAL() {(
         printf "%s" "$varname=("
         while true; do
             item=$(__ason__to_next "$__AS__US" "$stext")
-            printf " %q" "$(__ason__unpad "$item")"
+            printf " %q" "$(__ason__unwrap "$item")"
             stext="${stext#"$item"}"
             [ -n "$stext" ] || break
             stext="${stext#"$__AS__US"}"
