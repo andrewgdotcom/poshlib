@@ -52,12 +52,12 @@ ${__AS__CAN}testquote${__AS__EM}${__AS__US}${__AS__CAN}${testquote}${__AS__EM}${
 [[ $(_DICT "$(_LIST "test 1" "testquote")" "$testlist") == "$testdict" ]] \
     || fail _DICT
 
-unpadlist="${__AS__SOH}${_PAD}${__AS__US}${_LIST}${__AS__STX}\
-    ${__AS__CAN}test 1${__AS__EM}${__AS__US}${_TRUE}${__AS__US}${__AS__EOT}"
+unpadlist="${__AS__SOH}${_PAD}${__AS__US}${_LIST}${__AS__STX}
+    ${__AS__CAN}test 1${__AS__EM}
+    ${__AS__US}${_TRUE}${__AS__US}${__AS__EOT}"
 
 
-### TODO: if the above contains a $'\n' after the __AS__EM, "_READ test 1" below fails unexpectedly.
-### This is probably because of an error in handling multiline values somewhere down the stack.
+### TODO: if the above contains $'\n', "_READ test 1" below fails unexpectedly.
 
 # Metadata tests
 
