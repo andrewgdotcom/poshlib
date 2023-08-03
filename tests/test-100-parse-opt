@@ -63,24 +63,25 @@ fakehash.unset expected_output
 # Now do the same for parse-opt-simple
 
 parse-opt.prefix "TEST_"
-parse-opt.flags "Verbose fORce"
-parse-opt.params OUTPUT input
+parse-opt.flags "Verbose fORce" ab-CD_ef
+parse-opt.params OUTPUT "input AB_cd"
 
 fakehash.declare expected_output
 
-fakehash.update expected_output ' ' ",,,,;"
-fakehash.update expected_output 'foo bar wibble' ",,,,;foo bar wibble"
-fakehash.update expected_output '--force' ",true,,,;"
-fakehash.update expected_output '--force --no-force' ",false,,,;"
-fakehash.update expected_output '--no-force --force' ",true,,,;"
-fakehash.update expected_output '--output=- --input "--" ' ",,,-,--;"
-fakehash.update expected_output '--output="A +" --input "a # c" ' ",,,A +,a # c;"
+fakehash.update expected_output ' ' ",,,,,,;"
+fakehash.update expected_output 'foo bar wibble' ",,,,,,;foo bar wibble"
+fakehash.update expected_output '--force' ",true,,,,,;"
+fakehash.update expected_output '--force --no-force' ",false,,,,,;"
+fakehash.update expected_output '--no-force --force' ",true,,,,,;"
+fakehash.update expected_output '--output=- --input "--" ' ",,,-,--,,;"
+fakehash.update expected_output '--output="A +" --input "a # c" ' ",,,A +,a # c,,;"
+fakehash.update expected_output '--no-ab-cd-ef --ab-cd=ef' ",,,,,false,ef;"
 
 fakehash.keys.read-a keys expected_output
 for input in "${keys[@]}"; do
     eval "set -- $input"
     eval "$(parse-opt-simple)"
-    output=",${TEST_FORCE:-},${TEST_VERBOSE:-},${TEST_OUTPUT:-},${TEST_INPUT:-};$*"
+    output=",${TEST_FORCE:-},${TEST_VERBOSE:-},${TEST_OUTPUT:-},${TEST_INPUT:-},${TEST_AB_CD_EF:-},${TEST_AB_CD:-};$*"
     if [[ "$output" != "$(fakehash.get expected_output "$input")" ]]; then
         echo "Failed on simple test '$input'"
         echo "   expect '$(fakehash.get expected_output "$input")'"
