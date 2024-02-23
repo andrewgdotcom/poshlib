@@ -1,4 +1,4 @@
-# shellcheck disable=SC2148
+# shellcheck disable=SC2148,SC2317
 ################################################################################
 # Run poshlib code (with optional use dependencies) in a remote context.
 # This replaces e.g. `ansible -m script`, which is incompatible with `use`.
