@@ -9,7 +9,8 @@
 ################################################################################
 
 flatten() { (
-    use swine
+    use strict
+    use utils
 
     [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: COMMAND: flatten $*"
 
@@ -18,33 +19,37 @@ flatten() { (
         die 102 "Too many arguments to flatten() at line $(caller)"
     fi
 
-    continuation=
+    local words=()
+    local verb rest input path module continuation
 
     exec <"$script"
     while IFS= read -r input; do
         if
-            path=$(say "$input" | awk '$1=="use-from" {print $2}')
-            [ -n "$path" ] && [ -z "$continuation" ]
+            IFS=$' \t' read -ra words <<<"$input"
+            [ "${words[0]:-}" = "use-from" ] && [ -z "$continuation" ]
         then
+            path="${words[1]}"
+            [ -n "$path" ] || die 101 "Syntax error: 'use-from' requires an argument"
             __posh__flatten__path=$(__posh__prependpath "$__posh__flatten__path" "$path" "$__posh__flatten__stack")
             say "# FLATTEN: USE FROM $path >> $__posh__flatten__path"
         elif
-            module=$(say "$input" | awk '$1=="use" {print $2}')
-            [ -n "$module" ] && [ -z "$continuation" ]
+            IFS=$' \t' read -ra words <<<"$input"
+            [ "${words[0]:-}" = "use" ] && [ -z "$continuation" ]
         then
+            module="${words[1]}"
+            [ -n "$module" ] || die 101 "Syntax error: 'use' requires an argument"
             say "# FLATTEN: USE $module"
             [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: FLATTEN: USE $module"
             __posh__descend flatten "$module"
             say "# FLATTEN: END USE $module"
             [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: FLATTEN: END USE $module"
-        elif ! awk \
-"/^[ \\t]*(\\.[ \\t]|source[ \\t]).*\\/poshlib.sh([ \\t|&\"')].*)?$/ {exit 1}" \
-                <<< "${input}"; then
-            # BEWARE: the above is double-quoted so we can use a single-quote
-            # in the regex.
-            # Note: awk will exit 0 by default so we "fail" on match and
-            # invert the test above.
-
+        elif
+            {
+                IFS=$' \t' read -r verb rest <<<"$input"
+                { [ "${verb:-}" = "." ] || [ "${verb:-}" = "source" ] ; } && \
+                    [ -n "${rest:-}" ] && [ "${rest%/poshlib.sh*}" != "${rest}" ]
+            }
+        then
             # Simulate a fresh usepath and callstack while flattening.
             # WARNING: this may end up using a different version of poshlib.
             # Also, this only works if nobody has done anything nonstandard to

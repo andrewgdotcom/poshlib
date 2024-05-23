@@ -1,0 +1,32 @@
+#!/bin/bash
+# shellcheck disable=SC1090,SC1091
+. "$(dirname "${BASH_SOURCE[0]}")/../poshlib.sh" || exit 1
+use strict
+use utils
+use wc
+use job-pool
+
+tempfile=$(mktemp)
+
+write-test() {
+    echo "$*" >> "$tempfile"
+}
+
+# initialise threadpool
+job-pool.init 4 0
+
+for i in 0 1 2 3 4 5 6 7 8 9; do
+    write-test "$i"
+done
+
+# wait and clean up
+e=
+try job-pool.shutdown
+if catch e; then
+    warn "Error $e shutting down threadpool"
+fi
+
+[[ $(wc.lines < "$tempfile") == 10 ]] || die 254 "Wrong number of lines printed"
+
+# shellcheck disable=SC2154
+exit "$job_pool_nerrors"

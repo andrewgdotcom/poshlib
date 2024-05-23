@@ -1,8 +1,11 @@
 #!/bin/bash
-SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
+SCRIPT_DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 # shellcheck disable=SC1090,SC1091
-. "$SCRIPT_DIR/../poshlib.sh" || exit 1
-use swine
+. "$(readlink -f "$SCRIPT_DIR")/../poshlib.sh" || exit 1
+# The above `readlink -f` is strictly redundant
+# But it's a good stress test of the pseudoparser
+use strict
+use utils
 use flatten
 
 if [ "$*" = "last" ]; then
@@ -28,7 +31,8 @@ cat <<EOF > "$tmpdir/command"
 #!/bin/bash
 SCRIPT_DIR=\$(dirname "\${BASH_SOURCE[0]}")
 . \$SCRIPT_DIR'/poshlib/poshlib.sh' || exit 1
-use swine
+use strict
+use utils
 # do nothing
 :
 EOF

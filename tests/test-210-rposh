@@ -1,14 +1,16 @@
 #!/bin/bash
 # shellcheck disable=SC1090,SC1091
 . "$(dirname "${BASH_SOURCE[0]}")/../poshlib.sh" || exit 1
-use swine
+use strict
+use utils
 use rposh
 
 if [ "${1:-}" == "" ]; then
+    ssh localhost true || die 0 "rposh cannot be tested without ssh, skipping test..."
     result=$(
+        e=
         try rscript ",localhost,," --ssh-user="$USER" --sudo-user="$USER" "${BASH_SOURCE[0]}" '\[last\]' 'SHOULD NOT BE DISPLAYED'
         if catch e; then
-            # shellcheck disable=SC2154
             say "ERROR $e"
         fi
     )

@@ -24,6 +24,8 @@
 ########################################################################
 
 use ason/entities
+use tr
+use wc
 
 # Tests
 
@@ -166,7 +168,9 @@ __ason__pad() {
 }
 
 __ason__unpad() {
-    printf "%s" "$1" | sed "s/^[ \\t]*//; s/^$_PAD//; s/[ \\t]*$//; s/$_PAD$//"
+    # tr.strip actually deletes one or more contiguous $_PAD characters.
+    # They SHOULD NOT appear, so this is lenient but not strictly wrong.
+    printf "%s" "$1" | IFS=$' \t' tr.strip | IFS="$_PAD" tr.strip
 }
 
 __ason__join() {
@@ -228,9 +232,9 @@ __ason__to_next() {
         __ason__text="${__ason__text#*"${__ason__separator}"}"
 
         # find (number of __AS__SOH) minus (number of __AS__EOT) in chunk
-        __ason__opens=$(tr -c -d "$__AS__SOH" <<< "$__ason__chunk" | wc -c)
-        __ason__closes=$(tr -c -d "$__AS__EOT" <<< "$__ason__chunk" | wc -c)
-        (( __ason__depth=__ason__depth+__ason__opens-__ason__closes ))
+        __ason__opens=$(wc.count "$__AS__SOH" <<< "$__ason__chunk")
+        __ason__closes=$(wc.count "$__AS__EOT" <<< "$__ason__chunk")
+        __ason__depth=$(( __ason__depth+__ason__opens-__ason__closes ))
 
         # if __ason__depth < 0, our ASON does not nest properly; abort
         [ "$__ason__depth" -ge 0 ] || return 1

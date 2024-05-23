@@ -1,0 +1,14 @@
+#!/bin/bash
+
+SCRIPT_DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+# shellcheck disable=SC1090,SC1091
+. "${SCRIPT_DIR}/../poshlib.sh" || exit 1
+use strict
+use utils
+
+for v in 3.2 4.0 4.1 4.2 4.3 4.4 5.0; do
+    echo "Running tests on bash v$v"
+    echo
+    docker run --rm -v "$SCRIPT_DIR/..:/mnt" "bash:$v" bash -c 'ln -s /usr/local/bin/bash /bin ; for i in '"${*:-all}"'; do /mnt/tests/$i; done' || echo "FAILED on bash v$v"
+    echo
+done
