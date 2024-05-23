@@ -34,6 +34,8 @@ rscript() { (
 
     # parse host_list into an array
     IFS=, read -r -a hosts <<< "$host_list"
+    [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: hosts=(${hosts[*]})"
+
     # parse RPOSH_SSH_OPTIONS into an array, and intersperse them with "-o" flags
     IFS=, read -r -a ssh_key_values <<< "${RPOSH_SSH_OPTIONS:-}"
     for option in ${ssh_key_values+"${ssh_key_values[@]}"}; do
@@ -42,15 +44,20 @@ rscript() { (
     if [ -n "${RPOSH_SSH_USER:-}" ]; then
         ssh_options+=("-o" "User=${RPOSH_SSH_USER}")
     fi
+    [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: ssh_options=(${ssh_options[*]})"
+
     if [ -n "${RPOSH_SUDO_USER:-}" ]; then
         pre_command=("sudo" "-u" "${RPOSH_SUDO_USER}" "--")
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: pre_command=(${pre_command[*]})"
     fi
+
     tmpdir=$(mktemp -d)
     flatten "$command" > "$tmpdir/$base_command"
-    chmod +x "$tmpdir/$base_command"
-    [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: ssh_options=(${ssh_options[*]})"
-    [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: hosts=(${hosts[*]})"
+    # parse the shebang so we can execute it on the remote side below
+    # unknown executable scripts can trigger malware false positives
+    read -r -a shell_command < <(head -1 "$tmpdir/$base_command")
+    shell_command[0]="${shell_command[0]#\#\!}"
+    [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: shell_command=${shell_command[*]}"
 
     invoke_remote() {
         local target=$1; shift
@@ -99,10 +106,10 @@ rscript() { (
             "-o" "ControlPath=$controlpath" -- "$target" "mktemp -d" </dev/null)
         scp -q -p "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
             "$tmpdir/$base_command" "${target}:${remote_tmpdir}/$base_command"
-        [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: remote_command=${pre_command[*]} $remote_tmpdir/$base_command"
+        [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: remote_command=${pre_command[*]} ${shell_command[*]} $remote_tmpdir/$base_command"
         # shellcheck disable=SC2046
         ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
-            "$target" "${pre_command[@]}" "$remote_tmpdir/$base_command" \
+            "$target" "${pre_command[@]}" "${shell_command[@]}" "$remote_tmpdir/$base_command" \
             $(printf ' %q' "$@") >> "$stdout_dev" 2>> "$stderr_dev"
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: command complete"
 
