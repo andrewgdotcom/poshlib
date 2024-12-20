@@ -54,8 +54,6 @@ __ason__is_entity() {
 __ason__is_element() {
     __ason__header="${1%%"${__AS__STX}"*}"
     [ "$__ason__header" == "$1" ] || return 1
-    __ason__footer="${1##*"${__AS__ETX}"}"
-    [ "$__ason__footer" == "$1" ] || return 1
 
     # TODO: check also for structure characters
     return 0
@@ -64,11 +62,8 @@ __ason__is_element() {
 __ason__is_structure() {
     __ason__header="${1%%"${__AS__STX}"*}"
     [ "$__ason__header" != "$1" ] || return 1
-    __ason__footer="${1##*"${__AS__ETX}"}"
-    [ "$__ason__footer" != "$1" ] || return 1
 
     [ "${__ason__header#"${__AS__SOH}${_PAD}${__AS__US}"}" != "$__ason__header" ] || return 1
-    [ "${__ason__footer%"${__AS__EOT}"}" != "$__ason__footer" ] || return 1
 
     # TODO: check also proper nesting
     return 0
@@ -147,16 +142,8 @@ __ason__get_stext() {
     # strip header and closing delimiter, which MUST exist
     __ason__temp="${1#*"${__AS__STX}"}"
     [ "$__ason__temp" != "$1" ] || return 1
-    __ason__stext="${__ason__temp%"${__AS__EOT}"}"
+    __ason__stext="${__ason__temp%"${__AS__ETX}"}"
     [ "$__ason__stext" != "$__ason__temp" ] || return 1
-    # remove footer IFF it exists
-    __ason__footer="${__ason__stext##*"${__AS__ETX}"}"
-    if [ "$__ason__footer" != "$__ason__stext" ]; then
-        # make sure we've detected our own footer and not a child's
-        if [ "${__ason__footer%"${__AS__EOT}"*}" = "$__ason__footer" ]; then
-            __ason__stext="${__ason__stext%"${__ason__footer}"}"
-        fi
-    fi
     printf "%s" "$__ason__stext"
 }
 
@@ -205,12 +192,8 @@ __ason__begin_text() {
     printf "%s" "$__AS__STX"
 }
 
-__ason__begin_footer() {
-    printf "%s" "$__AS__ETX${1:-}${__AS__US}${2:-}"
-}
-
 __ason__end() {
-    printf "%s" "$__AS__EOT"
+    printf "%s" "$__AS__ETX"
 }
 
 
@@ -238,9 +221,9 @@ __ason__to_next() {
         __ason__result="${__ason__result}${__ason__chunk}"
         __ason__text="${__ason__text#*"${__ason__separator}"}"
 
-        # find (number of __AS__SOH) minus (number of __AS__EOT) in chunk
+        # find (number of __AS__SOH) minus (number of __AS__ETX) in chunk
         __ason__opens=$(wc.count "$__AS__SOH" <<< "$__ason__chunk")
-        __ason__closes=$(wc.count "$__AS__EOT" <<< "$__ason__chunk")
+        __ason__closes=$(wc.count "$__AS__ETX" <<< "$__ason__chunk")
         __ason__depth=$(( __ason__depth+__ason__opens-__ason__closes ))
 
         # if __ason__depth < 0, our ASON does not nest properly; abort

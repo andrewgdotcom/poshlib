@@ -30,7 +30,7 @@ _REVEAL() {(
     string="$1"; shift
 
     # First substitute structure characters
-    for entityvar in __AS__SOH __AS__STX __AS__ETX __AS__EOT \
+    for entityvar in __AS__SOH __AS__STX __AS__ETX \
             __AS__CAN __AS__EM \
             __AS__FS __AS__GS __AS__RS __AS__US; do
         # we can't replace this with shell native if we want to support bash 3.2
