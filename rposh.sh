@@ -104,13 +104,20 @@ rscript() { (
 
         remote_tmpdir=$(ssh "${ssh_options[@]}" \
             "-o" "ControlPath=$controlpath" -- "$target" "mktemp -d" </dev/null)
-        scp -q -p "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
+        try scp -q -p "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
             "$tmpdir/$base_command" "${target}:${remote_tmpdir}/$base_command"
+        if catch e; then
+            warn "Error $e when copying command to $target"
+            return
+        fi
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: remote_command=${pre_command[*]} ${shell_command[*]} $remote_tmpdir/$base_command"
         # shellcheck disable=SC2046
-        ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
+        try ssh "${ssh_options[@]}" "-o" "ControlPath=$controlpath" -- \
             "$target" "${pre_command[@]}" "${shell_command[@]}" "$remote_tmpdir/$base_command" \
             $(printf ' %q' "$@") >> "$stdout_dev" 2>> "$stderr_dev"
+        if catch e; then
+            warn "Error $e when executing command on $target"
+        fi
         [ -z "${POSH_DEBUG:-}" ] || warn "# POSH_DEBUG: RPOSH: command complete"
 
         if [ -z "${RPOSH_SSH_KEEPALIVE:-}" ] || [ -z "${XDG_RUNTIME_DIR:-}" ]; then
